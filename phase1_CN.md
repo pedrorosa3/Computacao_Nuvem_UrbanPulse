@@ -18,7 +18,7 @@ Os clientes utilizam os padrões históricos fornecidos como baseline para os se
 
 ## Use Cases
 
-### Guilherme — Trip Service
+### Guilherme Almeida — Trip Service
 - UC01 — Classificação das viagens por hora do dia (peak, off-peak, night)
 - UC02 — Índice de desvio de rota com classificação efficient/moderate/inefficient
 - UC03 — Velocidade média das viagens por zona e período do dia (km/h), com classificação automática em slow, normal ou fast com base em thresholds históricos
@@ -26,7 +26,7 @@ Os clientes utilizam os padrões históricos fornecidos como baseline para os se
 - UC20 — Deteção de viagens com valores suspeitos (Uma viagem de 2km a custar 50p ou assim.) 
   *(chama Trip Service + Revenue Service)*
 
-### Diogo — Location Service
+### Diogo Sousa — Location Service
 - UC04 — Ranking de zonas com quota de mercado
 - UC05 — Top zonas de dropoff com percentagem por destino
 - UC06 — Pares origem-destino com índice de afinidade entre zonas
@@ -34,14 +34,14 @@ Os clientes utilizam os padrões históricos fornecidos como baseline para os se
 - UC19 — Score de performance por fornecedor 
   *(chama Trip Service + Revenue Service + Payment Service)*
 
-### Chico — Revenue Service
+### Francisco Lopes — Revenue Service
 - UC08 — Tarifa média por zona com desvio face à média global
 - UC09 — Decomposição percentual da receita por viagem (Do preço total, quanto corresponde à tarifa base, quanto corresponde à gorjeta etc...)
 - UC10 — Preço por km por zona *(chama Trip Service)*
 - UC15 — Matriz hora vs dia com identificação de horas de ponta.
 - UC16 — Evolução mensal com variação percentual e tendência
 
-### Pedro — Payment Service
+### Pedro Rosa — Payment Service
 - UC11 — Comparação estatística de gorjeta entre cartão e dinheiro
 - UC12 — Distribuição de métodos de pagamento com deteção de zonas atípicas
 - UC13 — Ranking de zonas por tipping score
