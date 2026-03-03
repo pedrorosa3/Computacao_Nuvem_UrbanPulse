@@ -5,3 +5,7 @@ Projeto no ambito da cadeira de Computação em Nuvem
 - Francisco Lopes 60252
 - Guilherme Almeida 60264
 - Pedro Rosa
+
+
+## Fases do Projeto
+- [Phase 1](./phase1_CN.md)
