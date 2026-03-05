@@ -1,0 +1,193 @@
+openapi: 3.0.3
+info:
+  title: UrbanPulse — Analytics Service
+  version: 1.0.0
+
+paths:
+  # UC19 — Comparação de padrões de mobilidade entre zonas ricas e periféricas
+
+  /analytics/mobility-comparison:
+    get:
+      summary: Mobility patterns comparison between affluent and peripheral zones
+      description: >
+        Compares historical mobility patterns between affluent zones (Manhattan
+        Yellow Zones) and peripheral zones (Bronx, Staten Island and Boro Zones).
+        Zone classification is fixed server-side based on the NYC Taxi Zone
+        lookup table service_zone field.
+        Aggregates data from Location Service (trip volume), Revenue Service
+        (fares), Payment Service (tips and payment methods) and Demand Service
+        (demand patterns and peak hours).
+      operationId: getMobilityComparison
+      parameters:
+        - name: start_date
+          in: query
+          required: false
+          description: Start of the period (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+            example: "2025-01-01"
+        - name: end_date
+          in: query
+          required: false
+          description: End of the period (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+            example: "2025-03-31"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  period:
+                    type: object
+                    properties:
+                      start_date:
+                        type: string
+                        format: date
+                        example: "2025-01-01"
+                      end_date:
+                        type: string
+                        format: date
+                        example: "2025-03-31"
+                  total_trips:
+                    type: integer
+                    description: Total trips in the period across all zones
+                    example: 34521890
+                  zone_classifications:
+                    type: object
+                    description: Criteria used to classify zones server-side
+                    properties:
+                      affluent:
+                        type: string
+                        example: "Manhattan Yellow Zone"
+                      peripheral:
+                        type: string
+                        example: "Bronx, Staten Island and Boro Zones"
+                  comparison:
+                    type: object
+                    properties:
+                      affluent:
+                        $ref: "#/components/schemas/ZoneGroupMetrics"
+                      peripheral:
+                        $ref: "#/components/schemas/ZoneGroupMetrics"
+                  mobility_gap:
+                    type: object
+                    description: >
+                      Relative difference between affluent and peripheral zones.
+                      Positive values mean affluent zones have higher values.
+                      Calculated as (affluent - peripheral) / peripheral * 100.
+                    properties:
+                      trip_volume_gap_pct:
+                        type: number
+                        format: float
+                        description: Difference in market share between the two groups
+                        example: 182.4
+                      fare_gap_pct:
+                        type: number
+                        format: float
+                        description: Difference in average fare between the two groups
+                        example: 64.3
+                      tip_gap_pct:
+                        type: number
+                        format: float
+                        description: Difference in average tip between the two groups
+                        example: 216.7
+                      card_payment_gap_pct:
+                        type: number
+                        format: float
+                        description: Difference in card payment usage between the two groups
+                        example: 90.5
+        "400":
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+components:
+  schemas:
+    ZoneGroupMetrics:
+      type: object
+      description: Aggregated mobility metrics for a group of zones
+      properties:
+        zone_count:
+          type: integer
+          description: Number of zones in this group
+          example: 74
+        trip_volume:
+          type: object
+          description: From Location Service
+          properties:
+            total_trips:
+              type: integer
+              example: 24821890
+            market_share_pct:
+              type: number
+              format: float
+              description: Percentage of total city trips originating from this group
+              example: 71.9
+        financials:
+          type: object
+          description: From Revenue Service
+          properties:
+            avg_fare:
+              type: number
+              format: float
+              description: Average fare amount in USD
+              example: 18.40
+            avg_tip:
+              type: number
+              format: float
+              description: Average tip amount in USD
+              example: 3.80
+            avg_tip_pct:
+              type: number
+              format: float
+              description: Average tip as percentage of fare
+              example: 20.7
+        payments:
+          type: object
+          description: From Payment Service
+          properties:
+            card_payment_pct:
+              type: number
+              format: float
+              description: Percentage of trips paid by card
+              example: 78.2
+            cash_payment_pct:
+              type: number
+              format: float
+              description: Percentage of trips paid by cash
+              example: 21.8
+        demand:
+          type: object
+          description: From Demand Service
+          properties:
+            peak_hour:
+              type: integer
+              description: Most common peak hour across zones in this group (0-23)
+              example: 18
+            avg_volatility_index:
+              type: number
+              format: float
+              description: Average volatility index across zones in this group
+              example: 0.38
+            volatility_classification:
+              type: string
+              enum: [low, medium, high]
+              example: "medium"
+
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 400
+        message:
+          type: string
+          example: "Invalid date range: end_date must be after start_date"
