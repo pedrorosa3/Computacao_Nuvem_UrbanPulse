@@ -544,19 +544,13 @@ paths:
           schema:
             type: string
             example: "2015_06_14482910"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - reason
-              properties:
-                reason:
-                  type: string
-                  description: Human-readable reason for deletion, persisted in audit log
-                  example: "Fare of $98 for a 1.2 km trip — confirmed outlier via UC20"
+        - name: reason
+          in: query
+          required: true
+          description: Human-readable reason for deletion, persisted in audit log
+          schema:
+            type: string
+            example: "Fare of $98 for a 1.2 km trip — confirmed outlier via UC20"
       responses:
         "200":
           description: Trip successfully deleted
