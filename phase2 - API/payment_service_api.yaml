@@ -59,6 +59,8 @@ paths:
       summary: UC13 — Ranking de zonas por Tipping Score
       description: Devolve uma lista de zonas ordenadas pelo seu "tipping score" (propensão histórica dos passageiros para dar boas gorjetas).
       parameters:
+        - $ref: '#/components/parameters/StartDateParam'
+        - $ref: '#/components/parameters/EndDateParam'
         - name: limit
           in: query
           description: Número máximo de zonas a retornar no ranking (Top N).

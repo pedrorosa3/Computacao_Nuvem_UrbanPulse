@@ -224,6 +224,22 @@ paths:
           schema:
             type: integer
             example: 230
+        - name: start_date
+          in: query
+          required: false
+          description: Start of the period (YYYY-MM-DD). If omitted, uses the full dataset.
+          schema:
+            type: string
+            format: date
+            example: "2015-01-01"
+        - name: end_date
+          in: query
+          required: false
+          description: End of the period (YYYY-MM-DD). If omitted, uses the full dataset.
+          schema:
+            type: string
+            format: date
+            example: "2015-12-31"
       responses:
         '200':
           description: Demand volatility index and peak hours for the zone

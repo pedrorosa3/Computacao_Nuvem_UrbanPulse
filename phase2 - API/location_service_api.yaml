@@ -255,6 +255,17 @@ paths:
               schema:
                 type: object
                 properties:
+                  period:
+                    type: object
+                    properties:
+                      start_date:
+                        type: string
+                        format: date
+                        example: "2025-01-01"
+                      end_date:
+                        type: string
+                        format: date
+                        example: "2025-03-31"
                   total_trips:
                     type: integer
                     description: Total trips in the period across all pairs
@@ -330,6 +341,22 @@ paths:
           schema:
             type: integer
             example: 161
+        - name: start_date
+          in: query
+          required: false
+          description: Start of the period (YYYY-MM-DD). If omitted, uses the full dataset.
+          schema:
+            type: string
+            format: date
+            example: "2015-01-01"
+        - name: end_date
+          in: query
+          required: false
+          description: End of the period (YYYY-MM-DD). If omitted, uses the full dataset.
+          schema:
+            type: string
+            format: date
+            example: "2015-12-31"
       responses:
         "200":
           description: Successful response
@@ -392,9 +419,11 @@ paths:
                         type: number
                         format: float
                         description: >
-                          Coefficient of variation of hourly trip counts.
-                          Higher values mean more unstable demand throughout the day.
-                        example: 0.42
+                          Normalized coefficient of variation of hourly trip counts,
+                          fetched from the Demand Service. 1.0 = city average.
+                          Above 1.0 = more volatile than average.
+                          Below 1.0 = more stable than average.
+                        example: 1.12
                       volatility_classification:
                         type: string
                         enum: [low, medium, high]
