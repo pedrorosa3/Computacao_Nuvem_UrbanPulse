@@ -30,7 +30,7 @@ Os clientes utilizam os padrões históricos fornecidos como baseline para os se
 
 ### Diogo Sousa — Location Service
 
-- UC04 — Ranking de zonas com quota de mercado
+- UC04 — Ranking de zonas com quota de mercado (Pickup)
 - UC05 — Top zonas de dropoff com percentagem por destino
 - UC06 — Pares origem-destino com índice de afinidade entre zonas
 - UC07 — Perfil completo de zona com score de atratividade
