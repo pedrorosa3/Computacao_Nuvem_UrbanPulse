@@ -35,6 +35,7 @@ Os clientes utilizam os padrões históricos fornecidos como baseline para os se
 - UC06 — Pares origem-destino com índice de afinidade entre zonas
 - UC07 — Perfil completo de zona com score de atratividade
 - UC19 — Comparação de padrões de mobilidade entre zonas ricas e zonas periféricas
+- UC23 - Atualização de uma viagem já existente.
 
 ### Francisco Lopes — Revenue Service
 
