@@ -46,7 +46,7 @@ Guilherme Almeida | 60264
 
 ## UC21 — Remoção de Viagens com Dados Inválidos ou Suspeitos
 
-- FR-21.1 — O sistema remove permanentemente registos de viagens que contenham dados inválidos ou que tenham sido sinalizados como suspeitos pelo UC20, mediante confirmação explícita do pedido.
+- FR-21.1 — O sistema remove permanentemente registos de viagens que contenham dados inválidos ou que tenham sido sinalizados como suspeitos pelo UC20.
 - FR-21.2 — O sistema suporta remoção individual por ID de viagem e remoção em lote com base em critérios de filtragem.
 - FR-21.3 — O sistema retorna erro 404 se a viagem não existir, erro 409 se a viagem não estiver marcada como inválida ou suspeita, e devolve um sumário com o número de registos removidos e os IDs afetados.
 
