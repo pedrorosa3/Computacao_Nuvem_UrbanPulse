@@ -8,23 +8,17 @@ Diogo Cordeiro de Sousa | 60250
 - FR-04.2 — O sistema suporta filtragem por período temporal e limitação do número de resultados.
 - FR-04.3 — O sistema devolve o total de trips do período e o período aplicado na resposta, para permitir verificação dos valores calculados.
 
----
-
 ## UC05 — Top Zonas de Dropoff com Percentagem por Destino
 
 - FR-05.1 — Para uma zona de pickup específica, o sistema devolve os destinos mais frequentes com a percentagem de trips que cada destino representa face ao total de saídas dessa zona.
 - FR-05.2 — O sistema suporta filtragem por período temporal e limitação do número de resultados.
 - FR-05.3 — O sistema devolve os metadados da zona de origem e o total de trips de saída, e retorna erro 404 se a zona não existir.
 
----
-
 ## UC06 — Pares Origem-Destino com Índice de Afinidade
 
-- FR-06.1 — O sistema identifica e devolve os pares de zonas com relações estruturalmente mais fortes, medidas pelo affinity index: `trips(A→B) / (total_saídas_A × total_entradas_B)`. Valores acima de 1.0 indicam uma ligação mais forte do que o esperado por acaso.
+- FR-06.1 — O sistema identifica e devolve os pares de zonas com relações estruturalmente mais fortes, medidas pelo affinity index: `trips(A→B) / (total_saídas_A × total_entradas_B)`. Valores acima de 1.0 indicam uma ligação mais forte do que o esperado.
 - FR-06.2 — O sistema exclui pares com volume insuficiente e suporta filtragem por período temporal.
 - FR-06.3 — O sistema devolve, para cada par, a frequência relativa como percentagem do total de trips da cidade, e inclui o período aplicado na resposta.
-
----
 
 ## UC07 — Perfil Completo de Zona com Score de Atratividade
 
@@ -32,15 +26,11 @@ Diogo Cordeiro de Sousa | 60250
 - FR-07.2 — O sistema calcula um attractiveness score (0–100) como composição ponderada do volume de trips (40%), gorjeta média (35%) e intensidade de procura em pico (25%), com classificação low/medium/high.
 - FR-07.3 — O sistema suporta filtragem por período temporal e retorna erro 404 se a zona não existir.
 
----
-
 ## UC19 — Comparação de Padrões de Mobilidade entre Zonas Ricas e Periféricas
 
 - FR-19.1 — O sistema compara métricas de mobilidade (trips, distância, fare, tip, volatilidade) entre zonas afluentes (Manhattan Yellow Zone) e periféricas (Bronx, Staten Island, Boro Zones), categorias definidas server-side.
 - FR-19.2 — Para cada dimensão, o sistema calcula o mobility gap: `(valor_afluente − valor_periférico) / valor_periférico × 100`, e identifica as dimensões com maior desigualdade.
 - FR-19.3 — O sistema agrega dados de múltiplos serviços (Revenue, Payment, Demand, Location) via chamadas REST internas, e suporta filtragem por período temporal.
-
----
 
 ## UC23 — Atualização de uma Viagem Existente
 
