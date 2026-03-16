@@ -29,7 +29,7 @@ Diogo Cordeiro de Sousa | 60250
 ## UC19 — Comparação de Padrões de Mobilidade entre Zonas Ricas e Periféricas
 
 - FR-19.1 — O sistema compara métricas de mobilidade (trips, distância, fare, tip, volatilidade) entre zonas afluentes (Manhattan Yellow Zone) e periféricas (Bronx, Staten Island, Boro Zones), categorias definidas server-side.
-- FR-19.2 — Para cada dimensão, o sistema calcula o mobility gap: `(valor_afluente − valor_periférico) / valor_periférico × 100`, e identifica as dimensões com maior desigualdade.
+- FR-19.2 — Para cada dimensão, o sistema calcula o mobility gap: `((valor_afluente − valor_periférico) / valor_periférico) × 100`, e identifica as dimensões com maior desigualdade.
 - FR-19.3 — O sistema agrega dados de múltiplos serviços (Revenue, Payment, Demand, Location) via chamadas gRPC internas, e suporta filtragem por período temporal.
 
 ## UC23 — Atualização de uma Viagem Existente
