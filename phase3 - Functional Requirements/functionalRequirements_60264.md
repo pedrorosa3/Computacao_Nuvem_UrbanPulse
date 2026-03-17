@@ -57,3 +57,7 @@ Guilherme Almeida | 60264
 - FR-22.1 — O sistema aceita a submissão de um novo registo de viagem com os campos obrigatórios (zona de pickup, zona de dropoff, distância, duração, fare) e, após persistência, aplica automaticamente as classificações de enriquecimento.
 - FR-22.2 — O sistema valida os dados submetidos antes da persistência, rejeitando valores fora dos intervalos admissíveis ou combinações logicamente inválidas.
 - FR-22.3 — O sistema retorna erro 422 se os dados forem inválidos, erro 400 se o request body estiver vazio ou mal formado, e devolve o registo completo com as classificações aplicadas em caso de sucesso.
+
+
+## Descrição da arquitetura
+A nossa arquitetura é composta por 6 micro-services independentes, nomedamente: Trips, Location, Revenue, Payment, Demand e Analytics. Decidimos desde já utilizar o padrão "Database per service", dado o tamanho do nosso dataset, e a querermos que os microservices sejam o mais independente possível uns dos outros. Um cliente externo comunica com a nossa aplicação via uma API REST, que por sua vez encaminha os pedidos para um gRPC gateway. Esse gRPC gateway realiza a comunicação interna para o microserviço responsável. Nos casos de uso em que um microservice precisa de chamar outro, os próprios microservices terão essa capacidade, sem necessidade de recorrer novamente ao gRPC gateway. Desta forma, acreditamos que a aplicação é toda facilmente escalável e modificável.
