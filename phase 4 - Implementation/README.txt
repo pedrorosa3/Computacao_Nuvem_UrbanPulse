@@ -1,0 +1,1 @@
+Para correr, ir até à loc da pasta no PowerShell, e correr: "docker-compose up -d location-db"
