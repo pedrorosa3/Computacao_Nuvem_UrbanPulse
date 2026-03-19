@@ -12,7 +12,7 @@ Diogo Cordeiro de Sousa | 60250
 
 - FR-05.1 — Para uma zona de pickup específica, o sistema devolve os destinos mais frequentes com a percentagem de trips que cada destino representa face ao total de saídas dessa zona.
 - FR-05.2 — O sistema suporta filtragem por período temporal e limitação do número de resultados.
-- FR-05.3 — O sistema devolve os metadados da zona de origem e o total de trips de saída, e retorna erro 404 se a zona não existir.
+- FR-05.3 — O sistema devolve os dados da zona de origem e o total de trips de saída, e retorna erro 404 se a zona não existir.
 
 ## UC06 — Pares Origem-Destino com Índice de Afinidade
 
@@ -29,11 +29,18 @@ Diogo Cordeiro de Sousa | 60250
 ## UC19 — Comparação de Padrões de Mobilidade entre Zonas Ricas e Periféricas
 
 - FR-19.1 — O sistema compara métricas de mobilidade (trips, distância, fare, tip, volatilidade) entre zonas afluentes (Manhattan Yellow Zone) e periféricas (Bronx, Staten Island, Boro Zones), categorias definidas server-side.
-- FR-19.2 — Para cada dimensão, o sistema calcula o mobility gap: `(valor_afluente − valor_periférico) / valor_periférico × 100`, e identifica as dimensões com maior desigualdade.
-- FR-19.3 — O sistema agrega dados de múltiplos serviços (Revenue, Payment, Demand, Location) via chamadas REST internas, e suporta filtragem por período temporal.
+- FR-19.2 — Para cada dimensão, o sistema calcula o mobility gap: `((valor_afluente − valor_periférico) / valor_periférico) × 100`, e identifica as dimensões com maior desigualdade.
+- FR-19.3 — O sistema agrega dados de múltiplos serviços (Revenue, Payment, Demand, Location) via chamadas gRPC internas, e suporta filtragem por período temporal.
 
 ## UC23 — Atualização de uma Viagem Existente
 
 - FR-23.1 — O sistema aplica atualizações parciais a um registo de viagem existente, mantendo os campos não fornecidos inalterados.
-- FR-23.2 — Após qualquer atualização, o sistema re-aplica automaticamente todas as classificações de enriquecimento (UC01, UC02, UC03, UC20) ao registo atualizado.
 - FR-23.3 — O sistema retorna erro 404 se a viagem não existir, erro 422 se os valores atualizados resultarem numa viagem inválida, e erro 400 se o request body estiver vazio ou mal formado.
+
+
+## Descrição da arquitetura
+A nossa arquitetura é composta por 6 micro-services independentes, nomedamente: Trips, Location, Revenue, Payment, Demand e Analytics.
+Decidimos desde já utilizar o padrão "Database per service", dado o tamanho do nosso dataset, e a querermos que os microservices sejam o mais independente possível uns dos outros.
+Um cliente externo comunica com a nossa aplicação via uma API REST, que por sua vez encaminha os pedidos para um gRPC gateway. Esse gRPC gateway realiza a comunicação interna para o microserviço responsável.
+Nos casos de uso em que um microservice precisa de chamar outro, os próprios microservices terão essa capacidade, sem necessidade de recorrer novamente ao gRPC gateway.
+Desta forma, acreditamos que a aplicação é toda facilmente escalável e modificável.
