@@ -1,0 +1,18 @@
+services:
+  location-db:
+    image: postgres:16-alpine
+    container_name: location-db
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: isqueiro20
+      POSTGRES_DB: location_db
+    volumes:
+      - ./db:/docker-entrypoint-initdb.d #Pasta automatica do postgre. Ao iniciar o container, colocamos o init.sql "dentro", para o postgre criar a BD corretamente.
+      - ./db-data:/var/lib/postgresql/data #A pasta "db-data" é uma copia da pasta "/var/lib/postgresql/data" que existe dentro do container.
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d location_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
