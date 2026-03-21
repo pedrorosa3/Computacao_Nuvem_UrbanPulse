@@ -7,8 +7,8 @@ services:
       POSTGRES_PASSWORD: isqueiro20
       POSTGRES_DB: location_db
     volumes:
-      - ./db:/docker-entrypoint-initdb.d #Pasta automatica do postgre. Ao iniciar o container, colocamos o init.sql "dentro", para o postgre criar a BD corretamente.
-      - ./db-data:/var/lib/postgresql/data #A pasta "db-data" é uma copia da pasta "/var/lib/postgresql/data" que existe dentro do container.
+      - ./db:/docker-entrypoint-initdb.d
+      - ./db-data:/var/lib/postgresql/data
     ports:
       - "5433:5432"
     healthcheck:
@@ -16,3 +16,18 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+
+  location-api:
+    build: .
+    container_name: location-api
+    environment:
+      DB_HOST: location-db
+      DB_PORT: 5432
+      DB_NAME: location_db
+      DB_USER: admin
+      DB_PASSWORD: isqueiro20
+    ports:
+      - "8000:8000"
+    depends_on:
+      location-db:
+        condition: service_healthy
