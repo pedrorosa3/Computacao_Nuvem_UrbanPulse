@@ -25,6 +25,19 @@ O database.py é o script responsável por fazer a ligação entre o container l
 Os routers é onde está a lógica da aplicação propriamente dita. Para já fiz apenas os que utilizam dados que estão presentes na location-db. 
 
 
+Como correr:
+
+
+Obter o ficheiro "yellow_tripdata_2015-01_clean.csv":
+-Correr o "taxiZones.py", script localizado na pasta "taxiZonesScript", que vai gerar o ficheiro "yellow_tripdata_2015-01_clean.csv",
+ou outro à nossa escolha.
+
+
+Criar a pasta "data" no diretório "location-service". Dentro dessa pasta data, colocar os ficheiros:
+-taxi_zone_lookup.csv  (Pode ser encontrado dentro da pasta "taxiZonesScript")
+-yellow_tripdata_2015-01_clean.csv
+
+
 Comandos para correr no PowerShell:
 cd "C:\Users\Diogo Sousa\Desktop\FCUL\Mestrado\CN\Cloud-Computing\phase 4 - Implementation\location-service"
 docker-compose up --build

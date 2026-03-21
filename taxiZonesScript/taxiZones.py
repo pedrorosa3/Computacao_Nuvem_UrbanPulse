@@ -2,8 +2,8 @@ import pandas as pd
 import geopandas as gpd
 
 #Config
-TRIPS_FILE = "C:/Users/Diogo Sousa/Desktop/FCUL/Mestrado/CN/Cloud-Computing/data/yellow_tripdata_2015-01.csv"
-ZONES_FILE   = "taxi_zones.shp"
+TRIPS_FILE = r"C:\Users\diogo\Desktop\FCUL\Mestrado\CN\Cloud-Computing\taxiZonesScript\yellow_tripdata_2015-01.csv"
+ZONES_FILE   = r"C:\Users\diogo\Desktop\FCUL\Mestrado\CN\Cloud-Computing\taxiZonesScript\taxi_zones.shp"
 OUTPUT_FILE  = "yellow_tripdata_2015-01_clean.csv"
 
 #Quando quisermos correr o ficheiro todo, colocar a None
