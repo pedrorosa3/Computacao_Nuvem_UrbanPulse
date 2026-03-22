@@ -1,31 +1,49 @@
 # UrbanPulse — Revenue & Demand Services
 
+## Arquitetura
+
+```
+revenue-service (8001) ──→ db-revenue (5432)  [revenue_db]
+demand-service  (8002) ──→ db-demand  (5433)  [demand_db]
+```
+
+Cada microserviço tem a sua própria base de dados PostgreSQL isolada.
+Ambas as BDs têm o mesmo schema e os mesmos dados de viagens.
+
 ## Estrutura do projecto
 
 ```
-urbanpulse/
+phase4/
 ├── docker-compose.yml
 ├── db/
-│   ├── 01_schema.sql       ← Schema da BD (tabelas + índices)
+│   ├── 01_schema.sql       ← Schema (tabelas + índices)
 │   ├── 02_seed.sql         ← Dados sintéticos para desenvolvimento
 │   └── 03_transform.sql    ← Transformação dados reais: trips_raw → trips
 ├── revenue-service/        ← UC08, UC09, UC10  (porta 8001)
 │   ├── Dockerfile
 │   ├── requirements.txt
 │   └── app/
+│       ├── __init__.py
 │       ├── main.py
-│       ├── db/connection.py
+│       ├── db/
+│       │   ├── __init__.py
+│       │   └── connection.py   ← liga a db-revenue:5432
 │       └── routers/
-│           ├── avg_fare.py      ← UC08
-│           ├── breakdown.py     ← UC09
-│           └── fare_per_km.py   ← UC10
+│           ├── __init__.py
+│           ├── avg_fare.py     ← UC08
+│           ├── breakdown.py    ← UC09
+│           └── fare_per_km.py  ← UC10
 └── demand-service/         ← UC15, UC16  (porta 8002)
     ├── Dockerfile
     ├── requirements.txt
     └── app/
+        ├── __init__.py
         ├── main.py
-        ├── db/connection.py
+        ├── db/
+        │   ├── __init__.py
+        │   └── connection.py   ← liga a db-demand:5433
         └── routers/
+            ├── __init__.py
             ├── hourly_matrix.py  ← UC15
             └── monthly_trend.py  ← UC16
 ```
@@ -34,49 +52,53 @@ urbanpulse/
 
 ## Ordem de execução
 
-### Opção A — Desenvolvimento (dados sintéticos, arranque rápido)
-
-```
-1.  docker compose up --build
-```
-
-Isto faz tudo automaticamente:
-- Arranca o PostgreSQL
-- Corre 01_schema.sql  (cria as tabelas)
-- Corre 02_seed.sql    (insere ~17k viagens sintéticas)
-- Arranca Revenue Service (porta 8001)
-- Arranca Demand Service  (porta 8002)
-
-Pronto. Testa em: http://localhost:8001/docs e http://localhost:8002/docs
-
-
-### Opção B — Produção (com os CSVs reais do Kaggle)
-
-#### Passo 1 — Arrancar os containers (sem seed de dados)
-
-Se não quiseres os dados sintéticos, comenta a linha do 02_seed.sql
-no docker-compose.yml antes de arrancar:
+### Opção A — Desenvolvimento (dados sintéticos)
 
 ```bash
 docker compose up --build
 ```
 
-#### Passo 2 — Copiar os CSVs para dentro do container da BD
+Isto faz tudo automaticamente:
+- Cria db-revenue e db-demand (dois PostgreSQL isolados)
+- Corre 01_schema.sql e 02_seed.sql em cada uma
+- Arranca Revenue Service na porta 8001
+- Arranca Demand Service na porta 8002
+
+Pronto. Acede em: http://localhost:8001/docs e http://localhost:8002/docs
+
+
+### Opção B — Produção (CSVs reais do Kaggle)
+
+#### Passo 1 — Arrancar os containers
+```bash
+docker compose up --build
+```
+
+#### Passo 2 — Copiar os CSVs para ambos os containers
 
 ```bash
-docker cp /caminho/local/yellow_tripdata_2015-01.csv urbanpulse-db:/tmp/
-docker cp /caminho/local/yellow_tripdata_2015-02.csv urbanpulse-db:/tmp/
+# Para a BD do Revenue Service
+docker cp yellow_tripdata_2015-01.csv urbanpulse-db-revenue:/tmp/
+docker cp yellow_tripdata_2015-02.csv urbanpulse-db-revenue:/tmp/
+# ... repetir para cada ficheiro
+
+# Para a BD do Demand Service (mesmos ficheiros)
+docker cp yellow_tripdata_2015-01.csv urbanpulse-db-demand:/tmp/
+docker cp yellow_tripdata_2015-02.csv urbanpulse-db-demand:/tmp/
 # ... repetir para cada ficheiro
 ```
 
-#### Passo 3 — Carregar cada CSV para trips_raw (staging)
+#### Passo 3 — Carregar CSVs para trips_raw em cada BD
 
 ```bash
-docker exec -it urbanpulse-db psql -U urbanpulse -d urbanpulse
+# Revenue DB
+docker exec -it urbanpulse-db-revenue psql -U urbanpulse -d revenue_db
+
+# Demand DB
+docker exec -it urbanpulse-db-demand psql -U urbanpulse -d demand_db
 ```
 
-Dentro do psql, por cada ficheiro:
-
+Dentro do psql (repetir para cada ficheiro e em cada BD):
 ```sql
 COPY trips_raw (
     "VendorID", tpep_pickup_datetime, tpep_dropoff_datetime,
@@ -90,27 +112,21 @@ FROM '/tmp/yellow_tripdata_2015-01.csv'
 CSV HEADER;
 ```
 
-Repetir para cada um dos 4 ficheiros (2015-01 a 2016-12).
-
-#### Passo 4 — Transformar trips_raw → trips (resolve lat/lon para zone IDs)
+#### Passo 4 — Transformar trips_raw → trips em cada BD
 
 ```bash
-docker exec -it urbanpulse-db psql -U urbanpulse -d urbanpulse \
-  -f /docker-entrypoint-initdb.d/03_transform.sql
+# Revenue DB
+docker cp db/03_transform.sql urbanpulse-db-revenue:/tmp/
+docker exec -it urbanpulse-db-revenue psql -U urbanpulse -d revenue_db -f /tmp/03_transform.sql
+
+# Demand DB
+docker cp db/03_transform.sql urbanpulse-db-demand:/tmp/
+docker exec -it urbanpulse-db-demand psql -U urbanpulse -d demand_db -f /tmp/03_transform.sql
 ```
-
-Ou se não montaste o ficheiro, copia-o primeiro:
-
-```bash
-docker cp db/03_transform.sql urbanpulse-db:/tmp/
-docker exec -it urbanpulse-db psql -U urbanpulse -d urbanpulse -f /tmp/03_transform.sql
-```
-
-Este passo pode demorar vários minutos com os dados reais (7GB).
 
 ---
 
-## Endpoints disponíveis
+## Endpoints
 
 ### Revenue Service — http://localhost:8001/docs
 
@@ -146,9 +162,6 @@ curl "http://localhost:8002/demand/hourly-matrix?year=2015"
 
 # UC16 — Evolução mensal 2015-2016, comparação mês a mês
 curl "http://localhost:8002/demand/monthly-trend?year_from=2015&year_to=2016&compare_by=month"
-
-# UC16 — Comparação com o mesmo mês do ano anterior
-curl "http://localhost:8002/demand/monthly-trend?year_from=2015&year_to=2016&compare_by=year"
 ```
 
 ---
@@ -156,9 +169,9 @@ curl "http://localhost:8002/demand/monthly-trend?year_from=2015&year_to=2016&com
 ## Parar / limpar
 
 ```bash
-# Parar (mantém dados da BD)
+# Parar (mantém os dados das BDs)
 docker compose down
 
-# Parar e apagar tudo (BD incluída)
+# Parar e apagar ambas as BDs (recomeçar do zero)
 docker compose down -v
 ```

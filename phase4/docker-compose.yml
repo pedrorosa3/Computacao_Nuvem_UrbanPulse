@@ -2,23 +2,44 @@ version: "3.9"
 
 services:
 
-  # ─── PostgreSQL ────────────────────────────────────────────────────────────
-  db:
+  # ─── PostgreSQL — Revenue ──────────────────────────────────────────────────
+  db-revenue:
     image: postgres:16-alpine
-    container_name: urbanpulse-db
+    container_name: urbanpulse-db-revenue
     restart: unless-stopped
     environment:
-      POSTGRES_DB:       urbanpulse
+      POSTGRES_DB:       revenue_db
       POSTGRES_USER:     urbanpulse
       POSTGRES_PASSWORD: urbanpulse
     volumes:
-      - pg_data:/var/lib/postgresql/data
+      - pg_revenue:/var/lib/postgresql/data
       - ./db/01_schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
       - ./db/02_seed.sql:/docker-entrypoint-initdb.d/02_seed.sql
     ports:
-      - "5432:5432"          # expose for local inspection (DBeaver, psql, etc.)
+      - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U urbanpulse -d urbanpulse"]
+      test: ["CMD-SHELL", "pg_isready -U urbanpulse -d revenue_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ─── PostgreSQL — Demand ───────────────────────────────────────────────────
+  db-demand:
+    image: postgres:16-alpine
+    container_name: urbanpulse-db-demand
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       demand_db
+      POSTGRES_USER:     urbanpulse
+      POSTGRES_PASSWORD: urbanpulse
+    volumes:
+      - pg_demand:/var/lib/postgresql/data
+      - ./db/01_schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
+      - ./db/02_seed.sql:/docker-entrypoint-initdb.d/02_seed.sql
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U urbanpulse -d demand_db"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -30,14 +51,14 @@ services:
     container_name: urbanpulse-revenue
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql://urbanpulse:urbanpulse@db:5432/urbanpulse
+      DATABASE_URL: postgresql://urbanpulse:urbanpulse@db-revenue:5432/revenue_db
     ports:
       - "8001:8001"
     depends_on:
-      db:
+      db-revenue:
         condition: service_healthy
     volumes:
-      - ./revenue-service/app:/app/app   # hot-reload during development
+      - ./revenue-service/app:/app/app
 
   # ─── Demand Service ────────────────────────────────────────────────────────
   demand-service:
@@ -46,14 +67,15 @@ services:
     container_name: urbanpulse-demand
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql://urbanpulse:urbanpulse@db:5432/urbanpulse
+      DATABASE_URL: postgresql://urbanpulse:urbanpulse@db-demand:5432/demand_db
     ports:
       - "8002:8002"
     depends_on:
-      db:
+      db-demand:
         condition: service_healthy
     volumes:
-      - ./demand-service/app:/app/app    # hot-reload during development
+      - ./demand-service/app:/app/app
 
 volumes:
-  pg_data:
+  pg_revenue:
+  pg_demand:
