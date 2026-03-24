@@ -1,4 +1,4 @@
- # UrbanPulse — Revenue & Demand Services
+# UrbanPulse — Revenue & Demand Services
 
 ## Arquitetura
 
@@ -175,3 +175,69 @@ docker compose down
 # Parar e apagar ambas as BDs (recomeçar do zero)
 docker compose down -v
 ```
+
+---
+
+## Testes — URLs prontas a usar
+
+### Revenue Service — http://localhost:8001
+
+**UC08 — Tarifa média por zona**
+```
+http://localhost:8001/revenue/avg-fare-by-zone
+http://localhost:8001/revenue/avg-fare-by-zone?year=2015
+http://localhost:8001/revenue/avg-fare-by-zone?year=2015&month=6
+http://localhost:8001/revenue/avg-fare-by-zone?zone_type=dropoff&sort=asc&limit=5
+http://localhost:8001/revenue/avg-fare-by-zone?year=2016&sort=desc&limit=10
+```
+
+**UC09 — Decomposição de receita**
+```
+http://localhost:8001/revenue/breakdown
+http://localhost:8001/revenue/breakdown?zone_id=161
+http://localhost:8001/revenue/breakdown?zone_id=161&year=2015
+http://localhost:8001/revenue/breakdown?zone_id=137&zone_type=dropoff
+http://localhost:8001/revenue/breakdown?year=2015&month=3
+```
+
+**UC10 — Preço por km**
+```
+http://localhost:8001/revenue/fare-per-km
+http://localhost:8001/revenue/fare-per-km?sort=desc&limit=10
+http://localhost:8001/revenue/fare-per-km?zone_type=dropoff
+http://localhost:8001/revenue/fare-per-km?year=2015&month=1&limit=5
+http://localhost:8001/revenue/fare-per-km?sort=asc&limit=5
+```
+
+---
+
+### Demand Service — http://localhost:8002
+
+**UC15 — Matriz hora × dia**
+```
+http://localhost:8002/demand/hourly-matrix
+http://localhost:8002/demand/hourly-matrix?year=2015
+http://localhost:8002/demand/hourly-matrix?year=2015&month=6
+http://localhost:8002/demand/hourly-matrix?zone_id=161
+http://localhost:8002/demand/hourly-matrix?zone_id=161&year=2015&month=12
+```
+
+**UC16 — Evolução mensal**
+```
+http://localhost:8002/demand/monthly-trend
+http://localhost:8002/demand/monthly-trend?year_from=2015&year_to=2016
+http://localhost:8002/demand/monthly-trend?year_from=2015&year_to=2016&compare_by=month
+http://localhost:8002/demand/monthly-trend?year_from=2015&year_to=2016&compare_by=year
+http://localhost:8002/demand/monthly-trend?zone_id=161&year_from=2015&year_to=2016
+```
+
+---
+
+### Health checks
+```
+http://localhost:8001/health
+http://localhost:8002/health
+```
+
+> Zone IDs mais populados no seed: `161` (Midtown Center), `137` (JFK),
+> `230` (Times Square), `87` (Financial District), `141` (LaGuardia).
