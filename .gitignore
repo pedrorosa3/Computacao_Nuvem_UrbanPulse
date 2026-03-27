@@ -1,0 +1,23 @@
+# ── Bases de dados (volumes Docker) ─────────────────────────────────────────
+phase4 - Implementation/trip-service/db-data/
+phase4 - Implementation/location-service/db-data/
+
+# ── Datasets (ficheiros grandes) ─────────────────────────────────────────────
+phase4 - Implementation/trip-service/data/
+phase4 - Implementation/location-service/data/
+TaxiZonesScript/yellow_tripdata_2015-01.csv
+TaxiZonesScript/yellow_tripdata_2015-01_clean.csv
+
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+
+# ── Shapefiles (ficheiros grandes geoespaciais) ───────────────────────────────
+TaxiZonesScript/*.shp
+TaxiZonesScript/*.dbf
+TaxiZonesScript/*.shx
+TaxiZonesScript/*.prj
+TaxiZonesScript/*.cpg
