@@ -1,27 +1,24 @@
-version: "3.9"
-
 services:
-
   # ─── PostgreSQL — Revenue ──────────────────────────────────────────────────
   db-revenue:
     image: postgres:16-alpine
     container_name: urbanpulse-db-revenue
     restart: unless-stopped
     environment:
-      POSTGRES_DB:       revenue_db
-      POSTGRES_USER:     urbanpulse
+      POSTGRES_DB: revenue_db
+      POSTGRES_USER: urbanpulse
       POSTGRES_PASSWORD: urbanpulse
     volumes:
-      - pg_revenue:/var/lib/postgresql/data
-      - ./db/01_schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
-      - ./db/02_seed.sql:/docker-entrypoint-initdb.d/02_seed.sql
+      - ./revenue-service/db:/docker-entrypoint-initdb.d
+      - ./revenue-service/db-data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "5435:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U urbanpulse -d revenue_db"]
       interval: 5s
       timeout: 5s
       retries: 10
+      start_period: 30s
 
   # ─── PostgreSQL — Demand ───────────────────────────────────────────────────
   db-demand:
@@ -29,13 +26,12 @@ services:
     container_name: urbanpulse-db-demand
     restart: unless-stopped
     environment:
-      POSTGRES_DB:       demand_db
-      POSTGRES_USER:     urbanpulse
+      POSTGRES_DB: demand_db
+      POSTGRES_USER: urbanpulse
       POSTGRES_PASSWORD: urbanpulse
     volumes:
-      - pg_demand:/var/lib/postgresql/data
-      - ./db/01_schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
-      - ./db/02_seed.sql:/docker-entrypoint-initdb.d/02_seed.sql
+      - ./demand-service/db:/docker-entrypoint-initdb.d
+      - ./demand-service/db-data:/var/lib/postgresql/data
     ports:
       - "5433:5432"
     healthcheck:
@@ -43,6 +39,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+      start_period: 30s
 
   # ─── Revenue Service ───────────────────────────────────────────────────────
   revenue-service:
@@ -75,7 +72,3 @@ services:
         condition: service_healthy
     volumes:
       - ./demand-service/app:/app/app
-
-volumes:
-  pg_revenue:
-  pg_demand:

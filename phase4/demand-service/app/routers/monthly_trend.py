@@ -13,28 +13,30 @@ def monthly_trend(
     year_to:    Optional[int] = Query(None, example=2016),
     compare_by: str           = Query("month", enum=["month", "year"]),
 ):
-    conditions = ["pickup_datetime IS NOT NULL"]
+    # Usar colunas pré-calculadas em vez de EXTRACT()
+    conditions = []
     params: list = []
     if zone_id is not None:
         conditions.append("pickup_zone_id = %s")
         params.append(zone_id)
     if year_from:
-        conditions.append("EXTRACT(YEAR FROM pickup_datetime) >= %s")
+        conditions.append("pickup_year >= %s")
         params.append(year_from)
     if year_to:
-        conditions.append("EXTRACT(YEAR FROM pickup_datetime) <= %s")
+        conditions.append("pickup_year <= %s")
         params.append(year_to)
-    where = "WHERE " + " AND ".join(conditions)
+
+    where = ("WHERE " + " AND ".join(conditions)) if conditions else ""
 
     query = f"""
         SELECT
-            EXTRACT(YEAR  FROM pickup_datetime)::INT AS year,
-            EXTRACT(MONTH FROM pickup_datetime)::INT AS month,
-            COUNT(*) AS trip_count
+            pickup_year  AS year,
+            pickup_month AS month,
+            COUNT(*)     AS trip_count
         FROM trips
         {where}
-        GROUP BY year, month
-        ORDER BY year, month
+        GROUP BY pickup_year, pickup_month
+        ORDER BY pickup_year, pickup_month
     """
 
     try:
@@ -55,7 +57,6 @@ def monthly_trend(
             "months": [],
         }
 
-    # Build lookup for variation calculation
     count_map: dict[tuple, int] = {
         (r["year"], r["month"]): int(r["trip_count"]) for r in rows
     }
@@ -64,20 +65,14 @@ def monthly_trend(
     for r in rows:
         yr, mo, cnt = int(r["year"]), int(r["month"]), int(r["trip_count"])
 
-        # Determine reference period
         if compare_by == "month":
-            # Previous calendar month
-            ref_yr  = yr if mo > 1 else yr - 1
-            ref_mo  = mo - 1 if mo > 1 else 12
+            ref_yr = yr if mo > 1 else yr - 1
+            ref_mo = mo - 1 if mo > 1 else 12
         else:
-            # Same month, previous year
             ref_yr, ref_mo = yr - 1, mo
 
         ref_count = count_map.get((ref_yr, ref_mo))
-        if ref_count and ref_count > 0:
-            variation = round((cnt - ref_count) / ref_count * 100, 2)
-        else:
-            variation = None
+        variation = round((cnt - ref_count) / ref_count * 100, 2) if ref_count else None
 
         months_out.append({
             "year":                 yr,
@@ -87,7 +82,6 @@ def monthly_trend(
             "variation_percentage": variation,
         })
 
-    # Overall trend: compare average of last third vs first third of the period
     counts = [m["trip_count"] for m in months_out]
     n = len(counts)
     if n >= 3:
@@ -95,12 +89,7 @@ def monthly_trend(
         avg_start = sum(counts[:third]) / third
         avg_end   = sum(counts[-third:]) / third
         diff_pct  = (avg_end - avg_start) / avg_start * 100 if avg_start else 0
-        if diff_pct > 2:
-            trend = "upward"
-        elif diff_pct < -2:
-            trend = "downward"
-        else:
-            trend = "stable"
+        trend = "upward" if diff_pct > 2 else "downward" if diff_pct < -2 else "stable"
     else:
         trend = "stable"
 

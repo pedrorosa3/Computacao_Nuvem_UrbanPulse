@@ -6,7 +6,6 @@ router = APIRouter()
 
 DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
-# Peak hour threshold: cells with trip_count > overall_avg * PEAK_FACTOR are flagged
 PEAK_FACTOR = 1.25
 
 
@@ -16,32 +15,30 @@ def hourly_matrix(
     year:    Optional[int] = Query(None, example=2015),
     month:   Optional[int] = Query(None, ge=1, le=12, example=6),
 ):
-    conditions = ["pickup_datetime IS NOT NULL"]
+    # Usar colunas pré-calculadas em vez de EXTRACT()
+    conditions = []
     params: list = []
     if zone_id is not None:
         conditions.append("pickup_zone_id = %s")
         params.append(zone_id)
     if year:
-        conditions.append("EXTRACT(YEAR FROM pickup_datetime) = %s")
+        conditions.append("pickup_year = %s")
         params.append(year)
     if month:
-        conditions.append("EXTRACT(MONTH FROM pickup_datetime) = %s")
+        conditions.append("pickup_month = %s")
         params.append(month)
-    where = "WHERE " + " AND ".join(conditions)
+
+    where = ("WHERE " + " AND ".join(conditions)) if conditions else ""
 
     query = f"""
         SELECT
-            -- PostgreSQL DOW: 0=Sunday … 6=Saturday  →  convert to 0=Monday … 6=Sunday
-            CASE (EXTRACT(DOW FROM pickup_datetime)::INT)
-                WHEN 0 THEN 6
-                ELSE EXTRACT(DOW FROM pickup_datetime)::INT - 1
-            END AS day_of_week,
-            EXTRACT(HOUR FROM pickup_datetime)::INT AS hour,
-            COUNT(*) AS trip_count
+            pickup_day_of_week AS day_of_week,
+            pickup_hour        AS hour,
+            COUNT(*)           AS trip_count
         FROM trips
         {where}
-        GROUP BY day_of_week, hour
-        ORDER BY day_of_week, hour
+        GROUP BY pickup_day_of_week, pickup_hour
+        ORDER BY pickup_day_of_week, pickup_hour
     """
 
     try:
@@ -52,7 +49,6 @@ def hourly_matrix(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-    # Build lookup: (day, hour) -> count
     cell_map: dict[tuple, int] = {
         (int(r["day_of_week"]), int(r["hour"])): int(r["trip_count"])
         for r in rows
@@ -71,7 +67,7 @@ def hourly_matrix(
             hours_data.append({
                 "hour":       h,
                 "trip_count": count,
-                "is_peak":    count >= peak_threshold,
+                "is_peak":    count >= peak_threshold if overall_avg > 0 else False,
             })
         matrix.append({
             "day_of_week": dow,
