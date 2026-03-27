@@ -30,7 +30,7 @@ yellow_tripdata_2015-01_clean.csv
 
 # Comandos para correr no PowerShell:
 
-cd "C:\...\Cloud-Computing\phase 4 - Implementation\payment-service"
+cd "C:\...\Cloud-Computing\phase4\payment-service"
 
 docker-compose up --build
 
@@ -38,8 +38,8 @@ python seed.py - Noutro terminal. Este script é para colocar dados na DB. Antes
 
 # Alguns endpoints para testar:
 
-http://localhost:8001/api/v1/payments/tips/comparison
+http://localhost:8002/api/v1/payments/tips/comparison
 
-http://localhost:8001/api/v1/payments/distribution
+http://localhost:8002/api/v1/payments/distribution
 
-http://localhost:8001/api/v1/payments/zones/tipping-score?limit=5
+http://localhost:8002/api/v1/payments/zones/tipping-score?limit=5
