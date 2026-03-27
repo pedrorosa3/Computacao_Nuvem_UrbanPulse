@@ -4,18 +4,6 @@ from app.database import execute_query
 
 router = APIRouter()
 
-# Route Deviation Index (RDI) logic:
-#
-#   For a trip with distance D (miles) and duration T (minutes) we estimate
-#   what a "direct" trip at average NYC speed (≈ 12 mph) would take:
-#       expected_duration_min = (D / 12) * 60
-#
-#   RDI = actual_duration / expected_duration
-#       RDI ≤ 1.20  → efficient    (≤ 20 % longer than direct route)
-#       RDI ≤ 1.60  → moderate     (20 – 60 % longer)
-#       RDI >  1.60 → inefficient  (> 60 % longer)
-#
-#   Trips with distance = 0 or duration ≤ 0 are excluded (invalid data).
 
 REFERENCE_SPEED_MPH = 12.0
 

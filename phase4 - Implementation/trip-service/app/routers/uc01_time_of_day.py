@@ -4,11 +4,6 @@ from app.database import execute_query
 
 router = APIRouter()
 
-# Time-of-day classification thresholds:
-#   peak      → 07:00–09:59 and 16:00–19:59
-#   night     → 22:00–05:59
-#   off_peak  → everything else
-
 @router.get(
     "/trips/classification/time-of-day",
     summary="UC01 — Classify trips by time of day",

@@ -4,20 +4,6 @@ from app.database import execute_query
 
 router = APIRouter()
 
-# UC20 — Suspicious trip detection
-#
-# A trip is flagged as suspicious if it violates one or more of these rules:
-#
-#   PRICE_VS_DISTANCE  : fare > $3 per mile for short trips (< 2 mi) with fare > $30
-#                        i.e. "2km trip costing $50"
-#   ZERO_DISTANCE      : fare > $5 but trip_distance = 0
-#   NEGATIVE_FARE      : fare_amount < 0
-#   IMPOSSIBLE_SPEED   : implied speed > 100 mph  (distance/duration)
-#   ZERO_DURATION      : trip_duration_min = 0 but distance > 0
-#   TIP_EXCEEDS_FARE   : tip_amount > fare_amount * 2  (tip more than twice the fare)
-#   EXCESSIVE_FARE     : fare_amount > 200  (outlier threshold)
-#   NEGATIVE_PASSENGERS: passenger_count <= 0
-
 
 @router.get(
     "/trips/suspicious",

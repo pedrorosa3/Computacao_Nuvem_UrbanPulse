@@ -3,22 +3,6 @@ from app.database import execute_query, execute_write
 
 router = APIRouter()
 
-# UC21 — Remove trips with invalid/suspicious data
-#
-# This endpoint supports two modes:
-#   1. DELETE /trips/{trip_id}        → remove a single trip by ID
-#   2. DELETE /trips/invalid/bulk     → bulk-remove trips matching invalid-data criteria
-#
-# Invalid data criteria (auto-detection):
-#   - trip_duration_min <= 0
-#   - trip_distance <= 0
-#   - fare_amount <= 0
-#   - tpep_dropoff_datetime <= tpep_pickup_datetime
-#   - trip_distance IS NULL
-#   - fare_amount IS NULL
-#   - pickup_zone_id IS NULL
-#   - dropoff_zone_id IS NULL
-
 
 @router.delete(
     "/trips/{trip_id}",

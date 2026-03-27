@@ -4,12 +4,6 @@ from app.database import execute_query
 
 router = APIRouter()
 
-# UC18 — Duration vs Tip coefficient
-#
-# We compute:
-#   - Pearson correlation between trip_duration_min and tip_amount
-#   - Average tip per duration bucket (0-10, 10-20, 20-30, 30-60, 60+ minutes)
-#   - Tip rate (tip / fare) per duration bucket
 
 
 @router.get(

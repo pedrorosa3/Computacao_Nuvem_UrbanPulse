@@ -4,14 +4,6 @@ from app.database import execute_query
 
 router = APIRouter()
 
-# Speed classification thresholds (km/h) derived from historical NYC taxi data:
-#   slow   < 15 km/h
-#   normal  15 – 30 km/h
-#   fast   > 30 km/h
-#
-# Trip distance is in miles → convert to km (* 1.60934)
-# Trip duration is in minutes → convert to hours (/ 60)
-
 MILES_TO_KM = 1.60934
 
 SLOW_THRESHOLD   = 15.0   # km/h
