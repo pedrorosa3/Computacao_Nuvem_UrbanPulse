@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package trips;
+
+service TripService {
+  rpc GetPassengerCounts (PassengerCountRequest) returns (PassengerCountResponse);
+}
+
+message PassengerCountRequest {
+  repeated int32 trip_ids = 1;
+}
+
+message PassengerCountResponse {
+  map<int32, int32> trip_passengers = 1;
+}
