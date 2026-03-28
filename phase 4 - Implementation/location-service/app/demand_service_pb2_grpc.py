@@ -45,8 +45,7 @@ class DemandServiceServicer(object):
     """Missing associated documentation comment in .proto file."""
 
     def GetZoneHourlyDemand(self, request, context):
-        """Outros serviços enviam o ID da zona e recebem a contagem de viagens por hora
-        """
+        """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')

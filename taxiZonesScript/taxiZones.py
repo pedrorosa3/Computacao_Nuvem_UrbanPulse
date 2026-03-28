@@ -1,10 +1,14 @@
 import pandas as pd
 import geopandas as gpd
+import os
+
 
 #Config
-TRIPS_FILE = r"C:\Users\diogo\Desktop\FCUL\Mestrado\CN\Cloud-Computing\taxiZonesScript\yellow_tripdata_2015-01.csv"
-ZONES_FILE   = r"C:\Users\diogo\Desktop\FCUL\Mestrado\CN\Cloud-Computing\taxiZonesScript\taxi_zones.shp"
-OUTPUT_FILE  = "yellow_tripdata_2015-01_clean.csv"
+BASE_DIR   = os.path.dirname(os.path.abspath(__file__))
+
+TRIPS_FILE  = os.path.join(BASE_DIR, "yellow_tripdata_2015-01.csv")
+ZONES_FILE  = os.path.join(BASE_DIR, "taxi_zones.shp")
+OUTPUT_FILE = os.path.join(BASE_DIR, "yellow_tripdata_2015-01_clean.csv")
 
 #Quando quisermos correr o ficheiro todo, colocar a None
 SAMPLE_ROWS  = None
