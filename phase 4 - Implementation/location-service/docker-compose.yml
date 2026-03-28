@@ -1,0 +1,36 @@
+services:
+  location-db:
+    image: postgres:16-alpine
+    container_name: location-db
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: isqueiro20
+      POSTGRES_DB: location_db
+    volumes:
+      - ./db:/docker-entrypoint-initdb.d
+      - ./db-data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d location_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  location-api:
+    build: .
+    container_name: location-api
+    environment:
+      DB_HOST: location-db
+      DB_PORT: 5432
+      DB_NAME: location_db
+      DB_USER: admin
+      DB_PASSWORD: isqueiro20
+      DEMAND_SERVICE_URL: demand-api:50053
+    ports:
+      - "8000:8000" # REST API
+      - "50054:50054" # gRPC
+    depends_on:
+      location-db:
+        condition: service_healthy

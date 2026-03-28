@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package location;
+
+service LocationService {
+  rpc GetZoneName (ZoneNameRequest) returns (ZoneNameResponse);
+  rpc GetZoneGroups (ZoneGroupsRequest) returns (ZoneGroupsResponse);
+}
+
+message ZoneNameRequest {
+  int32 zone_id = 1;
+}
+
+message ZoneNameResponse {
+  string zone_name = 1;
+  string borough = 2;
+}
+
+message ZoneGroupsRequest {
+  string start_date = 1;
+  string end_date = 2;
+}
+
+message ZoneGroup {
+  int32 zone_count = 1;
+  int32 total_trips = 2;
+  float market_share_pct = 3;
+  repeated int32 zone_ids = 4;
+}
+
+message ZoneGroupsResponse {
+  int32 total_trips = 1;
+  ZoneGroup affluent = 2;
+  ZoneGroup peripheral = 3;
+}
