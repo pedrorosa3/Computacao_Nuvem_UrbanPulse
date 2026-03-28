@@ -2,6 +2,7 @@ import math
 from fastapi import APIRouter, Query, HTTPException
 from typing import Optional
 from app.db.connection import get_conn
+from app.grpc_client import fetch_zone_info  # <--- IMPORT NOVO!
 
 router = APIRouter()
 
@@ -85,12 +86,24 @@ def zone_volatility(
     else:
         classification = "Highly Unstable (Extreme Peaks)"
 
-    # Identificar as horas de pico (acima da média + 1 desvio padrão)
+    # ... (todo o código SQL e cálculo matemático que fizemos antes fica igual) ...
+
+    # Identificar as horas de pico
     peak_threshold = mean_demand + stdev
     peak_hours = [h for h, count in enumerate(hourly_counts) if count > peak_threshold]
 
+    # --- MAGIA DO MICROSERVIÇO: Pedir dados ao Location Service ---
+    zone_info = fetch_zone_info(zone_id)
+    
+    if zone_info:
+        zone_details = f"{zone_info['borough']} - {zone_info['zone_name']}"
+    else:
+        zone_details = "Desconhecida (A aguardar Location Service)"
+
+    # --- RESPOSTA ATUALIZADA ---
     return {
         "zone_id": zone_id,
+        "zone_name": zone_details, # <--- DADO VINDO POR gRPC!
         "filters_applied": {"year": year, "month": month},
         "volatility_metrics": {
             "average_trips_per_hour": round(mean_demand, 2),
