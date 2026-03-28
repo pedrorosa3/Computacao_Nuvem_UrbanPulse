@@ -4,7 +4,7 @@
 
 **1.** Gerar o CSV limpo com o taxiZoneScript:
 
-python taxiZonesScript/taxiZonesScript.py
+python taxiZonesScript/taxiZones.py
 
 **2.** Copiar o ficheiro `yellow_tripdata_2015-01_clean.csv` para a pasta `data/` de cada microserviço. (tem de ser criada à mão por nós)
 
