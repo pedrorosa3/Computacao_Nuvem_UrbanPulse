@@ -54,8 +54,8 @@ def classify_trips_by_time_of_day(
             ROUND((COUNT(*) * 100.0 / NULLIF(t.total, 0))::numeric, 2)             AS percentage,
             t.total                                                                 AS total_trips
         FROM trips
-        {where}
         CROSS JOIN totals t
+        {where}
         GROUP BY time_class, t.total
         ORDER BY trip_count DESC
     """

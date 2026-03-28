@@ -55,8 +55,8 @@ def get_route_deviation(
             ROUND((COUNT(*) * 100.0 / NULLIF(t.total, 0))::numeric, 2)              AS percentage,
             t.total                                                                  AS total_trips
         FROM trips
-        {where}
         CROSS JOIN totals t
+        {where}
         GROUP BY deviation_class, t.total
         ORDER BY
             CASE deviation_class
@@ -110,7 +110,6 @@ def get_route_deviation(
         ORDER BY deviation_index DESC
         LIMIT %s
     """
-    # params uma só vez + limit
     trip_rows = execute_query(trips_query, tuple(params) + (limit,))
 
     result["sample_trips"] = [
