@@ -67,6 +67,7 @@ services:
       DATABASE_URL: postgresql://urbanpulse:urbanpulse@db-demand:5432/demand_db
     ports:
       - "8002:8002"
+      - "50053:50053"
     depends_on:
       db-demand:
         condition: service_healthy
