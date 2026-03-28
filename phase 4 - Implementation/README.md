@@ -6,7 +6,7 @@
 
 python taxiZonesScript/taxiZones.py
 
-**2.** Copiar o ficheiro `yellow_tripdata_2015-01_clean.csv` para a pasta `data/` de cada microserviço. (tem de ser criada à mão por nós)
+**2.** Copiar o ficheiro `yellow_tripdata_2015-01_clean.csv` para a pasta `data/` de cada microserviço. (tem de ser criada à mão por nós, o analytics não tem esta pasta, e o location service deve conter também o "taxi_zone_lookup.csv".)
 
 **3.** Iniciar os containers:
 
