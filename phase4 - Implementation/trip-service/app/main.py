@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from app.routers import (
     uc01_time_of_day,
@@ -6,6 +7,19 @@ from app.routers import (
     uc21_remove_invalid,
     uc22_submit_trip,
 )
+from app.grpc_server import serve_grpc
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Arranca o servidor gRPC quando a API inicia
+    grpc_server = serve_grpc()
+    print("gRPC server started on port 50051")
+    yield
+    # Para o servidor gRPC quando a API termina
+    grpc_server.stop(grace=5)
+    print("gRPC server stopped")
+
 
 app = FastAPI(
     title="UrbanPulse — Trip Service",
@@ -18,6 +32,7 @@ app = FastAPI(
         "UC21: Data quality management | "
         "UC22: Trip submission"
     ),
+    lifespan=lifespan,
 )
 
 app.include_router(uc01_time_of_day.router)
