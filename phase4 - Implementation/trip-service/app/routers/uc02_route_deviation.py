@@ -5,41 +5,33 @@ from app.database import execute_query
 router = APIRouter()
 
 
-REFERENCE_SPEED_MPH = 12.0
-
-
 @router.get(
     "/trips/route-deviation",
     summary="UC02 — Route deviation index",
     description=(
-        "Computes the Route Deviation Index (RDI) for each trip and returns "
-        "a summary of efficient / moderate / inefficient classifications, "
-        "optionally filtered by date range and/or pickup zone."
+        "Returns a summary of efficient / moderate / inefficient trip classifications "
+        "based on the pre-computed deviation_index and deviation_class columns. "
+        "Optionally filtered by date range and/or pickup zone."
     ),
 )
 def get_route_deviation(
     start_date:     date = Query(None, description="Filter from this date (inclusive)"),
     end_date:       date = Query(None, description="Filter up to this date (inclusive)"),
     pickup_zone_id:  int = Query(None, description="Filter by pickup zone ID"),
-    limit:           int = Query(20, ge=1, le=100, description="Max individual trip rows to return"),
-    summary_only:   bool = Query(False, description="Return only the summary counts, not individual trips"),
+    limit:           int = Query(20, ge=1, le=100, description="Max individual trips to return"),
+    summary_only:   bool = Query(False, description="Return only summary counts"),
 ):
     if start_date and end_date and end_date < start_date:
         raise HTTPException(status_code=400, detail="end_date must be after start_date")
 
-    filters = [
-        "trip_distance > 0",
-        "trip_duration_min > 0",
-        "trip_distance IS NOT NULL",
-        "trip_duration_min IS NOT NULL",
-    ]
-    params = []
+    filters = ["deviation_class IS NOT NULL"]
+    params  = []
 
     if start_date:
-        filters.append("DATE(tpep_pickup_datetime) >= %s")
+        filters.append("DATE(pickup_datetime) >= %s")
         params.append(start_date)
     if end_date:
-        filters.append("DATE(tpep_pickup_datetime) <= %s")
+        filters.append("DATE(pickup_datetime) <= %s")
         params.append(end_date)
     if pickup_zone_id is not None:
         filters.append("pickup_zone_id = %s")
@@ -47,49 +39,26 @@ def get_route_deviation(
 
     where = "WHERE " + " AND ".join(filters)
 
-    # Summary query
     summary_query = f"""
-        WITH rdi AS (
-            SELECT
-                id,
-                pickup_zone_id,
-                pickup_zone_name,
-                trip_distance,
-                trip_duration_min,
-                ROUND(
-                    (trip_duration_min / ((trip_distance / {REFERENCE_SPEED_MPH}) * 60))::numeric,
-                    4
-                ) AS rdi_value,
-                CASE
-                    WHEN (trip_duration_min / ((trip_distance / {REFERENCE_SPEED_MPH}) * 60)) <= 1.20
-                        THEN 'efficient'
-                    WHEN (trip_duration_min / ((trip_distance / {REFERENCE_SPEED_MPH}) * 60)) <= 1.60
-                        THEN 'moderate'
-                    ELSE 'inefficient'
-                END AS classification
-            FROM trips
-            {where}
-        ),
-        totals AS (SELECT COUNT(*) AS total FROM rdi)
+        WITH totals AS (SELECT COUNT(*) AS total FROM trips {where})
         SELECT
-            r.classification,
-            COUNT(*)                                             AS trip_count,
-            ROUND(AVG(r.rdi_value)::numeric, 4)                 AS avg_rdi,
-            ROUND((COUNT(*) * 100.0 / t.total)::numeric, 2)     AS percentage,
-            t.total                                              AS total_trips
-        FROM rdi r
+            deviation_class                                          AS classification,
+            COUNT(*)                                                 AS trip_count,
+            ROUND(AVG(deviation_index)::numeric, 4)                  AS avg_rdi,
+            ROUND((COUNT(*) * 100.0 / t.total)::numeric, 2)         AS percentage,
+            t.total                                                  AS total_trips
+        FROM trips
+        {where}
         CROSS JOIN totals t
-        GROUP BY r.classification, t.total
+        GROUP BY deviation_class, t.total
         ORDER BY
-            CASE r.classification
-                WHEN 'efficient'    THEN 1
-                WHEN 'moderate'     THEN 2
-                WHEN 'inefficient'  THEN 3
+            CASE deviation_class
+                WHEN 'efficient'   THEN 1
+                WHEN 'moderate'    THEN 2
+                WHEN 'inefficient' THEN 3
             END
     """
-
     summary_rows = execute_query(summary_query, tuple(params))
-
     total = int(summary_rows[0]["total_trips"]) if summary_rows else 0
 
     result = {
@@ -98,11 +67,10 @@ def get_route_deviation(
             "end_date":       str(end_date)      if end_date      else None,
             "pickup_zone_id": pickup_zone_id,
         },
-        "reference_speed_mph": REFERENCE_SPEED_MPH,
         "classification_thresholds": {
-            "efficient":   "RDI ≤ 1.20 (actual ≤ 20% over direct-route time)",
-            "moderate":    "1.20 < RDI ≤ 1.60",
-            "inefficient": "RDI > 1.60 (actual > 60% over direct-route time)",
+            "efficient":   "RDI <= 1.20",
+            "moderate":    "1.20 < RDI <= 1.60",
+            "inefficient": "RDI > 1.60",
         },
         "total_trips_analysed": total,
         "summary": [
@@ -119,7 +87,6 @@ def get_route_deviation(
     if summary_only:
         return result
 
-    # Sample trips query (top N by highest RDI so the user sees the worst offenders)
     trips_query = f"""
         SELECT
             id,
@@ -127,37 +94,26 @@ def get_route_deviation(
             pickup_zone_name,
             dropoff_zone_id,
             dropoff_zone_name,
-            trip_distance,
-            ROUND(trip_duration_min::numeric, 2)  AS trip_duration_min,
-            ROUND(
-                (trip_duration_min / ((trip_distance / {REFERENCE_SPEED_MPH}) * 60))::numeric,
-                4
-            )                                     AS rdi_value,
-            CASE
-                WHEN (trip_duration_min / ((trip_distance / {REFERENCE_SPEED_MPH}) * 60)) <= 1.20
-                    THEN 'efficient'
-                WHEN (trip_duration_min / ((trip_distance / {REFERENCE_SPEED_MPH}) * 60)) <= 1.60
-                    THEN 'moderate'
-                ELSE 'inefficient'
-            END                                   AS classification
+            trip_distance_km,
+            deviation_index,
+            deviation_class
         FROM trips
         {where}
-        ORDER BY rdi_value DESC
+        ORDER BY deviation_index DESC
         LIMIT %s
     """
     trip_rows = execute_query(trips_query, tuple(params) + (limit,))
 
     result["sample_trips"] = [
         {
-            "trip_id":            row["id"],
-            "pickup_zone_id":     row["pickup_zone_id"],
-            "pickup_zone_name":   row["pickup_zone_name"],
-            "dropoff_zone_id":    row["dropoff_zone_id"],
-            "dropoff_zone_name":  row["dropoff_zone_name"],
-            "trip_distance_mi":   float(row["trip_distance"]),
-            "trip_duration_min":  float(row["trip_duration_min"]),
-            "rdi_value":          float(row["rdi_value"]),
-            "classification":     row["classification"],
+            "trip_id":           row["id"],
+            "pickup_zone_id":    row["pickup_zone_id"],
+            "pickup_zone_name":  row["pickup_zone_name"],
+            "dropoff_zone_id":   row["dropoff_zone_id"],
+            "dropoff_zone_name": row["dropoff_zone_name"],
+            "trip_distance_km":  float(row["trip_distance_km"]),
+            "deviation_index":   float(row["deviation_index"]),
+            "classification":    row["deviation_class"],
         }
         for row in trip_rows
     ]

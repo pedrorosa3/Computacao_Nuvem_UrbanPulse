@@ -4,18 +4,13 @@ from app.database import execute_query
 
 router = APIRouter()
 
-MILES_TO_KM = 1.60934
-
-SLOW_THRESHOLD   = 15.0   # km/h
-FAST_THRESHOLD   = 30.0   # km/h
-
 
 @router.get(
     "/trips/speed/zones",
     summary="UC03 — Average speed per zone and period",
     description=(
-        "Returns the average travel speed (km/h) per pickup zone and time-of-day period, "
-        "classified as slow / normal / fast based on historical NYC thresholds."
+        "Returns average travel speed (km/h) per pickup zone and time-of-day period, "
+        "using the pre-computed avg_speed_kmh and speed_class columns."
     ),
 )
 def get_speed_by_zone(
@@ -30,77 +25,40 @@ def get_speed_by_zone(
 
     valid_periods = {"peak", "off_peak", "night", None}
     if period not in valid_periods:
-        raise HTTPException(
-            status_code=400,
-            detail=f"period must be one of: peak, off_peak, night"
-        )
+        raise HTTPException(status_code=400, detail="period must be one of: peak, off_peak, night")
 
-    filters = [
-        "trip_distance > 0",
-        "trip_duration_min > 0",
-        "trip_distance IS NOT NULL",
-        "trip_duration_min IS NOT NULL",
-        "pickup_zone_id IS NOT NULL",
-    ]
-    params = []
+    filters = ["avg_speed_kmh IS NOT NULL", "pickup_zone_id IS NOT NULL"]
+    params  = []
 
     if start_date:
-        filters.append("DATE(tpep_pickup_datetime) >= %s")
+        filters.append("DATE(pickup_datetime) >= %s")
         params.append(start_date)
     if end_date:
-        filters.append("DATE(tpep_pickup_datetime) <= %s")
+        filters.append("DATE(pickup_datetime) <= %s")
         params.append(end_date)
     if pickup_zone_id is not None:
         filters.append("pickup_zone_id = %s")
         params.append(pickup_zone_id)
+    if period is not None:
+        filters.append("time_class = %s")
+        params.append(period)
 
     where = "WHERE " + " AND ".join(filters)
 
-    # Period filter applied after CTE
-    period_filter = ""
-    if period == "peak":
-        period_filter = "AND time_period = 'peak'"
-    elif period == "off_peak":
-        period_filter = "AND time_period = 'off_peak'"
-    elif period == "night":
-        period_filter = "AND time_period = 'night'"
-
     query = f"""
-        WITH classified AS (
-            SELECT
-                pickup_zone_id,
-                pickup_zone_name,
-                -- speed in km/h
-                (trip_distance * {MILES_TO_KM}) / (trip_duration_min / 60.0) AS speed_kmh,
-                CASE
-                    WHEN EXTRACT(HOUR FROM tpep_pickup_datetime) BETWEEN 7  AND 9  THEN 'peak'
-                    WHEN EXTRACT(HOUR FROM tpep_pickup_datetime) BETWEEN 16 AND 19 THEN 'peak'
-                    WHEN EXTRACT(HOUR FROM tpep_pickup_datetime) >= 22
-                         OR EXTRACT(HOUR FROM tpep_pickup_datetime) < 6             THEN 'night'
-                    ELSE 'off_peak'
-                END AS time_period
-            FROM trips
-            {where}
-        )
         SELECT
             pickup_zone_id                              AS zone_id,
             pickup_zone_name                            AS zone_name,
-            time_period,
+            time_class                                  AS time_period,
             COUNT(*)                                    AS trip_count,
-            ROUND(AVG(speed_kmh)::numeric, 2)           AS avg_speed_kmh,
-            ROUND(MIN(speed_kmh)::numeric, 2)           AS min_speed_kmh,
-            ROUND(MAX(speed_kmh)::numeric, 2)           AS max_speed_kmh,
-            CASE
-                WHEN AVG(speed_kmh) < {SLOW_THRESHOLD}  THEN 'slow'
-                WHEN AVG(speed_kmh) <= {FAST_THRESHOLD} THEN 'normal'
-                ELSE 'fast'
-            END                                         AS classification
-        FROM classified
-        WHERE speed_kmh > 0
-          AND speed_kmh < 200   -- exclude physically impossible outliers
-          {period_filter}
-        GROUP BY pickup_zone_id, pickup_zone_name, time_period
-        HAVING COUNT(*) >= 5    -- need at least 5 trips to be statistically meaningful
+            ROUND(AVG(avg_speed_kmh)::numeric, 2)       AS avg_speed_kmh,
+            ROUND(MIN(avg_speed_kmh)::numeric, 2)       AS min_speed_kmh,
+            ROUND(MAX(avg_speed_kmh)::numeric, 2)       AS max_speed_kmh,
+            MODE() WITHIN GROUP (ORDER BY speed_class)  AS classification
+        FROM trips
+        {where}
+        GROUP BY pickup_zone_id, pickup_zone_name, time_class
+        HAVING COUNT(*) >= 5
         ORDER BY avg_speed_kmh DESC
         LIMIT %s
     """
@@ -116,9 +74,9 @@ def get_speed_by_zone(
             "period":         period,
         },
         "classification_thresholds_kmh": {
-            "slow":   f"avg_speed < {SLOW_THRESHOLD}",
-            "normal": f"{SLOW_THRESHOLD} ≤ avg_speed ≤ {FAST_THRESHOLD}",
-            "fast":   f"avg_speed > {FAST_THRESHOLD}",
+            "slow":   "avg_speed < 15",
+            "normal": "15 <= avg_speed <= 30",
+            "fast":   "avg_speed > 30",
         },
         "total_results": len(rows),
         "zones": [
