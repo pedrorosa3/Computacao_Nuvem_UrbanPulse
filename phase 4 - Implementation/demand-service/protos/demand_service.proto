@@ -4,6 +4,7 @@ package demand;
 
 service DemandService {
   rpc GetZoneHourlyDemand (ZoneDemandRequest) returns (ZoneDemandResponse);
+  rpc GetGroupDemand (GroupDemandRequest) returns (GroupDemandResponse);
 }
 
 message ZoneDemandRequest {
@@ -13,4 +14,14 @@ message ZoneDemandRequest {
 message ZoneDemandResponse {
   map<int32, int32> hourly_counts = 1;
   string peak_day = 2;
+}
+
+message GroupDemandRequest {
+  repeated int32 zone_ids = 1;
+}
+
+message GroupDemandResponse {
+  int32 peak_hour = 1;
+  float avg_volatility_index = 2;
+  string volatility_classification = 3;
 }

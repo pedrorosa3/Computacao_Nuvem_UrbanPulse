@@ -39,12 +39,23 @@ class DemandServiceStub(object):
                 request_serializer=demand__service__pb2.ZoneDemandRequest.SerializeToString,
                 response_deserializer=demand__service__pb2.ZoneDemandResponse.FromString,
                 _registered_method=True)
+        self.GetGroupDemand = channel.unary_unary(
+                '/demand.DemandService/GetGroupDemand',
+                request_serializer=demand__service__pb2.GroupDemandRequest.SerializeToString,
+                response_deserializer=demand__service__pb2.GroupDemandResponse.FromString,
+                _registered_method=True)
 
 
 class DemandServiceServicer(object):
     """Missing associated documentation comment in .proto file."""
 
     def GetZoneHourlyDemand(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetGroupDemand(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -57,6 +68,11 @@ def add_DemandServiceServicer_to_server(servicer, server):
                     servicer.GetZoneHourlyDemand,
                     request_deserializer=demand__service__pb2.ZoneDemandRequest.FromString,
                     response_serializer=demand__service__pb2.ZoneDemandResponse.SerializeToString,
+            ),
+            'GetGroupDemand': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetGroupDemand,
+                    request_deserializer=demand__service__pb2.GroupDemandRequest.FromString,
+                    response_serializer=demand__service__pb2.GroupDemandResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -86,6 +102,33 @@ class DemandService(object):
             '/demand.DemandService/GetZoneHourlyDemand',
             demand__service__pb2.ZoneDemandRequest.SerializeToString,
             demand__service__pb2.ZoneDemandResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetGroupDemand(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/demand.DemandService/GetGroupDemand',
+            demand__service__pb2.GroupDemandRequest.SerializeToString,
+            demand__service__pb2.GroupDemandResponse.FromString,
             options,
             channel_credentials,
             insecure,

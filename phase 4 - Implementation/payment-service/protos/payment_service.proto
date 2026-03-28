@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package payment;
+
+service PaymentService {
+  rpc GetPaymentDetails (PaymentRequest) returns (PaymentResponse);
+  rpc GetPaymentDistribution (PaymentDistributionRequest) returns (PaymentDistributionResponse);
+}
+
+message PaymentRequest {
+  repeated int32 trip_ids = 1;
+}
+
+message TripPaymentInfo {
+  float fare_amount = 1;
+  float tip_amount = 2;
+  string payment_type = 3;
+}
+
+message PaymentResponse {
+  map<int32, TripPaymentInfo> payments = 1;
+}
+
+message PaymentDistributionRequest {
+  string start_date = 1;
+  string end_date = 2;
+}
+
+message PaymentDistributionResponse {
+  float card_payment_pct = 1;
+  float cash_payment_pct = 2;
+}

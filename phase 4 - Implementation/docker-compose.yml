@@ -4,9 +4,9 @@ services:
     image: postgres:16-alpine
     container_name: location-db
     environment:
-      POSTGRES_USER:     admin
+      POSTGRES_USER: admin
       POSTGRES_PASSWORD: isqueiro20
-      POSTGRES_DB:       location_db
+      POSTGRES_DB: location_db
     volumes:
       - ./location-service/db:/docker-entrypoint-initdb.d
       - ./location-service/db-data:/var/lib/postgresql/data
@@ -24,8 +24,8 @@ services:
     image: postgres:16-alpine
     container_name: urbanpulse-db-demand
     environment:
-      POSTGRES_DB:       demand_db
-      POSTGRES_USER:     urbanpulse
+      POSTGRES_DB: demand_db
+      POSTGRES_USER: urbanpulse
       POSTGRES_PASSWORD: urbanpulse
     volumes:
       - ./demand-service/db:/docker-entrypoint-initdb.d
@@ -39,21 +39,41 @@ services:
       retries: 10
       start_period: 30s
 
+  # ─── PostgreSQL — Payment ──────────────────────────────────────────────────
+  payment-db:
+    image: postgres:15-alpine
+    container_name: payment_postgres
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: payment_db
+    volumes:
+      - ./payment-service/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./payment-service/db-data:/var/lib/postgresql/data
+    ports:
+      - "5435:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d payment_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
   # ─── Location Service ──────────────────────────────────────────────────────
   location-api:
     build:
       context: ./location-service
     container_name: location-api
     environment:
-      DB_HOST:             location-db
-      DB_PORT:             5432
-      DB_NAME:             location_db
-      DB_USER:             admin
-      DB_PASSWORD:         isqueiro20
-      DEMAND_SERVICE_URL:  demand-service:50053
+      DB_HOST: location-db
+      DB_PORT: 5432
+      DB_NAME: location_db
+      DB_USER: admin
+      DB_PASSWORD: isqueiro20
+      DEMAND_SERVICE_URL: demand-service:50053
     ports:
-      - "8000:8000"    # REST API
-      - "50054:50054"  # gRPC
+      - "8000:8000"
+      - "50054:50054"
     depends_on:
       location-db:
         condition: service_healthy
@@ -68,8 +88,38 @@ services:
     environment:
       DATABASE_URL: postgresql://urbanpulse:urbanpulse@db-demand:5432/demand_db
     ports:
-      - "8002:8002"    # REST API
-      - "50053:50053"  # gRPC
+      - "8002:8002"
+      - "50053:50053"
     depends_on:
       db-demand:
         condition: service_healthy
+
+  # ─── Payment Service ───────────────────────────────────────────────────────
+  payment-api:
+    build:
+      context: ./payment-service
+    container_name: payment_fastapi
+    environment:
+      DATABASE_URL: postgresql://admin:password@payment-db:5432/payment_db
+    ports:
+      - "8006:8006"
+      - "50052:50052"
+    depends_on:
+      payment-db:
+        condition: service_healthy
+
+  # ─── Analytics Service ─────────────────────────────────────────────────────
+  analytics-api:
+    build:
+      context: ./analytics-service
+    container_name: analytics-api
+    environment:
+      LOCATION_SERVICE_URL: location-api:50054
+      DEMAND_SERVICE_URL: demand-service:50053
+      PAYMENT_SERVICE_URL: payment-api:50052
+    ports:
+      - "8003:8003"
+    depends_on:
+      - location-api
+      - demand-service
+      - payment-api
