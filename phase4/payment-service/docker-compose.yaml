@@ -19,7 +19,7 @@ services:
     container_name: payment_fastapi
     ports:
       - "50052:50052" # Servidor gRPC
-      - "8002:8000" # Porta 8002 no teu PC liga à porta 8000 do container
+      - "8006:8000" # Porta 8006 no teu PC liga à porta 8000 do container
     environment:
       - DATABASE_URL=postgresql://admin:password@payment-db:5432/payment_db
     depends_on:

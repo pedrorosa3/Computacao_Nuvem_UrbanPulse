@@ -38,8 +38,8 @@ python seed.py - Noutro terminal. Este script é para colocar dados na DB. Antes
 
 # Alguns endpoints para testar:
 
-http://localhost:8002/api/v1/payments/tips/comparison
+http://localhost:8006/api/v1/payments/tips/comparison
 
-http://localhost:8002/api/v1/payments/distribution
+http://localhost:8006/api/v1/payments/distribution
 
-http://localhost:8002/api/v1/payments/zones/tipping-score?limit=5
+http://localhost:8006/api/v1/payments/zones/tipping-score?limit=5

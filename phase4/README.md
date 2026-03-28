@@ -21,5 +21,5 @@ Para a base de dados (`payment-db`) conter os dados necessários, utilizamos um 
 
 4. Noutro terminal na mesma diretoria fazer python seed.py - (Limitado a 10 000 viagens para testes — remover "nrows=10000" no seed.py para carga completa)
 
-5. A API fica disponível em: http://localhost:8002/docs
+5. A API fica disponível em: http://localhost:8006/docs
 
