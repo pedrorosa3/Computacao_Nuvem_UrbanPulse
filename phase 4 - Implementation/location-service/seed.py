@@ -16,6 +16,9 @@ BASE_DIR   = os.path.dirname(os.path.abspath(__file__))
 ZONES_CSV  = os.path.join(BASE_DIR, "data", "taxi_zone_lookup.csv")
 TRIPS_CSV  = os.path.join(BASE_DIR, "data", "yellow_tripdata_2015-01_clean.csv")
 
+# Limite de viagens para testes (remover para inserir tudo)
+SAMPLE_ROWS = 10000
+
 # ── Ligação ───────────────────────────────────────────────────────────────────
 print("A ligar à base de dados...")
 try:
@@ -56,7 +59,9 @@ trips = pd.read_csv(TRIPS_CSV, usecols=[
     "pickup_zone_name",
     "dropoff_zone_id",
     "dropoff_zone_name",
-], nrows=10000) #Remover esta nrows quando quiser inserir o dataset completo
+    "fare_amount",
+    "tip_amount",
+], nrows=SAMPLE_ROWS)
 
 trips = trips.dropna(subset=["pickup_zone_id", "dropoff_zone_id"])
 trips["pickup_date"]       = pd.to_datetime(trips["tpep_pickup_datetime"]).dt.date
@@ -64,21 +69,28 @@ trips["pickup_zone_id"]    = trips["pickup_zone_id"].astype(int)
 trips["dropoff_zone_id"]   = trips["dropoff_zone_id"].astype(int)
 trips["pickup_zone_name"]  = trips["pickup_zone_name"].astype(str)
 trips["dropoff_zone_name"] = trips["dropoff_zone_name"].astype(str)
+trips["fare_amount"]       = trips["fare_amount"].fillna(0)
+trips["tip_amount"]        = trips["tip_amount"].fillna(0)
 
 cur.execute("TRUNCATE TABLE trips RESTART IDENTITY;")
 
 BATCH_SIZE = 1000
 records = list(trips[[
     "pickup_date", "pickup_zone_id", "pickup_zone_name",
-    "dropoff_zone_id", "dropoff_zone_name"
+    "dropoff_zone_id", "dropoff_zone_name",
+    "fare_amount", "tip_amount"
 ]].itertuples(index=False, name=None))
 
 for i in range(0, len(records), BATCH_SIZE):
     batch = records[i:i + BATCH_SIZE]
     cur.executemany(
         """
-        INSERT INTO trips (pickup_date, pickup_zone_id, pickup_zone_name, dropoff_zone_id, dropoff_zone_name)
-        VALUES (%s, %s, %s, %s, %s);
+        INSERT INTO trips (
+            pickup_date, pickup_zone_id, pickup_zone_name,
+            dropoff_zone_id, dropoff_zone_name,
+            fare_amount, tip_amount
+        )
+        VALUES (%s, %s, %s, %s, %s, %s, %s);
         """,
         batch
     )
