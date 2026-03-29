@@ -6,7 +6,7 @@ import os
 # ── Config ───────────────────────────────────────────────────────────────────
 DB_CONFIG = {
     "host":     "localhost",
-    "port":     5433,
+    "port":     5437,
     "dbname":   "location_db",
     "user":     "admin",
     "password": "isqueiro20",
