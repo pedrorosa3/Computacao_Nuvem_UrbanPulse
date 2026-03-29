@@ -1,6 +1,10 @@
 # UrbanPulse
 
-## Como correr
+## Link para fazer download do dataset:
+
+https://www.kaggle.com/datasets/elemento/nyc-yellow-taxi-trip-data
+
+## Como colocar o projeto a funcionar
 
 **1.** Gerar o CSV limpo com o taxiZoneScript:
 
@@ -31,7 +35,7 @@ python trip-service/seed.py
 | Trip Service      | 8001 | 50051 | 5436 |
 | Analytics Service | 8003 | —     | —    |
 
-**Nota:** Se ao correr o projeto algum serviço falhar com erro de ligação à base de dados, é provável que a porta configurada já esteja em uso na tua máquina. 
+**Nota:** Se ao correr o projeto algum serviço falhar com erro de ligação à base de dados, é provável que a porta configurada já esteja em uso no pc.
 Nesse caso, altera a porta do serviço afetado no `docker-compose.yml` global, no `docker-compose.yml` individual do serviço e no respetivo `seed.py`,garantindo que os três ficheiros usam sempre a mesma porta.
 
 ## Alguns endpoints para testar:
