@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x16location_service.proto\x12\x08location\"\"\n\x0fZoneNameRequest\x12\x0f\n\x07zone_id\x18\x01 \x01(\x05\"6\n\x10ZoneNameResponse\x12\x11\n\tzone_name\x18\x01 \x01(\t\x12\x0f\n\x07\x62orough\x18\x02 \x01(\t\"9\n\x11ZoneGroupsRequest\x12\x12\n\nstart_date\x18\x01 \x01(\t\x12\x10\n\x08\x65nd_date\x18\x02 \x01(\t\"`\n\tZoneGroup\x12\x12\n\nzone_count\x18\x01 \x01(\x05\x12\x13\n\x0btotal_trips\x18\x02 \x01(\x05\x12\x18\n\x10market_share_pct\x18\x03 \x01(\x02\x12\x10\n\x08zone_ids\x18\x04 \x03(\x05\"y\n\x12ZoneGroupsResponse\x12\x13\n\x0btotal_trips\x18\x01 \x01(\x05\x12%\n\x08\x61\x66\x66luent\x18\x02 \x01(\x0b\x32\x13.location.ZoneGroup\x12\'\n\nperipheral\x18\x03 \x01(\x0b\x32\x13.location.ZoneGroup2\xa3\x01\n\x0fLocationService\x12\x44\n\x0bGetZoneName\x12\x19.location.ZoneNameRequest\x1a\x1a.location.ZoneNameResponse\x12J\n\rGetZoneGroups\x12\x1b.location.ZoneGroupsRequest\x1a\x1c.location.ZoneGroupsResponseb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x16location_service.proto\x12\x08location\"\"\n\x0fZoneNameRequest\x12\x0f\n\x07zone_id\x18\x01 \x01(\x05\"6\n\x10ZoneNameResponse\x12\x11\n\tzone_name\x18\x01 \x01(\t\x12\x0f\n\x07\x62orough\x18\x02 \x01(\t2W\n\x0fLocationService\x12\x44\n\x0bGetZoneName\x12\x19.location.ZoneNameRequest\x1a\x1a.location.ZoneNameResponseb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -35,12 +35,6 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_ZONENAMEREQUEST']._serialized_end=70
   _globals['_ZONENAMERESPONSE']._serialized_start=72
   _globals['_ZONENAMERESPONSE']._serialized_end=126
-  _globals['_ZONEGROUPSREQUEST']._serialized_start=128
-  _globals['_ZONEGROUPSREQUEST']._serialized_end=185
-  _globals['_ZONEGROUP']._serialized_start=187
-  _globals['_ZONEGROUP']._serialized_end=283
-  _globals['_ZONEGROUPSRESPONSE']._serialized_start=285
-  _globals['_ZONEGROUPSRESPONSE']._serialized_end=406
-  _globals['_LOCATIONSERVICE']._serialized_start=409
-  _globals['_LOCATIONSERVICE']._serialized_end=572
+  _globals['_LOCATIONSERVICE']._serialized_start=128
+  _globals['_LOCATIONSERVICE']._serialized_end=215
 # @@protoc_insertion_point(module_scope)

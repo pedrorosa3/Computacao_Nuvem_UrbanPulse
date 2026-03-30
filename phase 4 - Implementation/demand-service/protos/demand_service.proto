@@ -3,8 +3,8 @@ syntax = "proto3";
 package demand;
 
 service DemandService {
+  // Outros serviços enviam o ID da zona e recebem a contagem de viagens por hora
   rpc GetZoneHourlyDemand (ZoneDemandRequest) returns (ZoneDemandResponse);
-  rpc GetGroupDemand (GroupDemandRequest) returns (GroupDemandResponse);
 }
 
 message ZoneDemandRequest {
@@ -12,16 +12,5 @@ message ZoneDemandRequest {
 }
 
 message ZoneDemandResponse {
-  map<int32, int32> hourly_counts = 1;
-  string peak_day = 2;
-}
-
-message GroupDemandRequest {
-  repeated int32 zone_ids = 1;
-}
-
-message GroupDemandResponse {
-  int32 peak_hour = 1;
-  float avg_volatility_index = 2;
-  string volatility_classification = 3;
+  map<int32, int32> hourly_counts = 1; 
 }

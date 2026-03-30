@@ -2,7 +2,7 @@ import math
 from fastapi import APIRouter, Query, HTTPException
 from typing import Optional
 from app.db.connection import get_conn
-from app.grpc_client import fetch_zone_info 
+from app.grpc_client import fetch_zone_info  # <--- IMPORT NOVO!
 
 router = APIRouter()
 
