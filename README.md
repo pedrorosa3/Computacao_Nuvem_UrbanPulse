@@ -29,6 +29,7 @@ python location-service/seed.py
 python demand-service/seed.py
 python payment-service/seed.py
 python trip-service/seed.py
+python revenue-service/seed.py
 
 ## Para testes, por default os varios seed.py estão limitados a 10 mil linhas. Podemos mudar este valor quando quisermos.
 
@@ -36,11 +37,12 @@ python trip-service/seed.py
 
 | Serviço           | REST | gRPC  | BD   |
 | ----------------- | ---- | ----- | ---- |
-| Location Service  | 8000 | 50054 | 5433 |
+| Location Service  | 8000 | 50054 | 5437 |
 | Demand Service    | 8002 | 50053 | 5434 |
 | Payment Service   | 8006 | 50052 | 5435 |
 | Trip Service      | 8001 | 50051 | 5436 |
 | Analytics Service | 8003 | —     | —    |
+| Revenue Service   | 8007 | 50055 | 5433 |
 
 **Nota:** Se ao correr o projeto algum serviço falhar com erro de ligação à base de dados, é provável que a porta configurada já esteja em uso no pc.
 Nesse caso, altera a porta do serviço afetado no `docker-compose.yml` global, no `docker-compose.yml` individual do serviço e no respetivo `seed.py`,garantindo que os três ficheiros usam sempre a mesma porta.
@@ -80,3 +82,12 @@ http://localhost:8001/trips/speed/zones
 
 http://localhost:8003/health
 http://localhost:8003/analytics/mobility-comparison
+
+### Revenue Service
+
+http://localhost:8007/health
+http://localhost:8007/revenue/avg-fare-by-zone
+http://localhost:8007/revenue/breakdown
+http://localhost:8007/revenue/breakdown?zone_id=161&year=2015
+http://localhost:8007/revenue/fare-per-km
+http://localhost:8007/fare-per-km?sort=asc&limit=5
