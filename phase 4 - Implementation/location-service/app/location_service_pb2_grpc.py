@@ -39,6 +39,11 @@ class LocationServiceStub(object):
                 request_serializer=location__service__pb2.ZoneNameRequest.SerializeToString,
                 response_deserializer=location__service__pb2.ZoneNameResponse.FromString,
                 _registered_method=True)
+        self.GetZoneNames = channel.unary_unary(
+                '/location.LocationService/GetZoneNames',
+                request_serializer=location__service__pb2.ZoneNamesRequest.SerializeToString,
+                response_deserializer=location__service__pb2.ZoneNamesResponse.FromString,
+                _registered_method=True)
         self.GetZoneGroups = channel.unary_unary(
                 '/location.LocationService/GetZoneGroups',
                 request_serializer=location__service__pb2.ZoneGroupsRequest.SerializeToString,
@@ -50,6 +55,12 @@ class LocationServiceServicer(object):
     """Missing associated documentation comment in .proto file."""
 
     def GetZoneName(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetZoneNames(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -68,6 +79,11 @@ def add_LocationServiceServicer_to_server(servicer, server):
                     servicer.GetZoneName,
                     request_deserializer=location__service__pb2.ZoneNameRequest.FromString,
                     response_serializer=location__service__pb2.ZoneNameResponse.SerializeToString,
+            ),
+            'GetZoneNames': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetZoneNames,
+                    request_deserializer=location__service__pb2.ZoneNamesRequest.FromString,
+                    response_serializer=location__service__pb2.ZoneNamesResponse.SerializeToString,
             ),
             'GetZoneGroups': grpc.unary_unary_rpc_method_handler(
                     servicer.GetZoneGroups,
@@ -102,6 +118,33 @@ class LocationService(object):
             '/location.LocationService/GetZoneName',
             location__service__pb2.ZoneNameRequest.SerializeToString,
             location__service__pb2.ZoneNameResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetZoneNames(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/location.LocationService/GetZoneNames',
+            location__service__pb2.ZoneNamesRequest.SerializeToString,
+            location__service__pb2.ZoneNamesResponse.FromString,
             options,
             channel_credentials,
             insecure,

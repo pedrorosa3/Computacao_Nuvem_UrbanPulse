@@ -4,7 +4,6 @@ from . import location_service_pb2
 from . import location_service_pb2_grpc
 from app.database import execute_query
 
-# Classificação fixa server-side
 AFFLUENT_SERVICE_ZONES   = {"Yellow Zone"}
 PERIPHERAL_BOROUGHS      = {"Bronx", "Staten Island"}
 PERIPHERAL_SERVICE_ZONES = {"Boro Zone"}
@@ -39,9 +38,35 @@ class LocationServicer(location_service_pb2_grpc.LocationServiceServicer):
             context.set_details(str(e))
             return location_service_pb2.ZoneNameResponse()
 
+    def GetZoneNames(self, request, context):
+        """UC08 — Batch lookup de nomes de zonas para o Revenue Service."""
+        zone_ids = list(request.zone_ids)
+        if not zone_ids:
+            return location_service_pb2.ZoneNamesResponse()
+
+        try:
+            placeholders = ",".join(["%s"] * len(zone_ids))
+            rows = execute_query(
+                f"SELECT location_id, zone_name, borough FROM zones WHERE location_id IN ({placeholders})",
+                tuple(zone_ids)
+            )
+        except Exception as e:
+            context.set_code(grpc.StatusCode.INTERNAL)
+            context.set_details(str(e))
+            return location_service_pb2.ZoneNamesResponse()
+
+        zones = [
+            location_service_pb2.ZoneNameInfo(
+                zone_id=row["location_id"],
+                zone_name=row["zone_name"],
+                borough=row["borough"],
+            )
+            for row in rows
+        ]
+        return location_service_pb2.ZoneNamesResponse(zones=zones)
+
     def GetZoneGroups(self, request, context):
         try:
-            # Obter todas as zonas com classificação
             zones = execute_query(
                 "SELECT location_id, borough, service_zone FROM zones"
             )
@@ -49,7 +74,6 @@ class LocationServicer(location_service_pb2_grpc.LocationServiceServicer):
             affluent_ids   = [z["location_id"] for z in zones if classify_zone(z["borough"], z["service_zone"]) == "affluent"]
             peripheral_ids = [z["location_id"] for z in zones if classify_zone(z["borough"], z["service_zone"]) == "peripheral"]
 
-            # Filtros de data
             filters, params = [], []
             if request.start_date:
                 filters.append("pickup_date >= %s")
@@ -59,8 +83,7 @@ class LocationServicer(location_service_pb2_grpc.LocationServiceServicer):
                 params.append(request.end_date)
             date_where = (" AND " + " AND ".join(filters)) if filters else ""
 
-            # Total global
-            total_rows = execute_query(
+            total_rows  = execute_query(
                 f"SELECT COUNT(*) AS total FROM trips WHERE 1=1{date_where}",
                 tuple(params)
             )

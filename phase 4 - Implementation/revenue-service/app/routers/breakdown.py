@@ -1,8 +1,20 @@
 from fastapi import APIRouter, Query, HTTPException
 from typing import Optional
+import grpc
+import os
+
 from app.db.connection import get_conn
+from app import location_service_pb2, location_service_pb2_grpc
 
 router = APIRouter()
+
+LOCATION_SERVICE_HOST = os.getenv("LOCATION_SERVICE_HOST", "location-api")
+LOCATION_SERVICE_PORT = os.getenv("LOCATION_SERVICE_PORT", "50054")
+
+
+def _get_location_stub():
+    channel = grpc.insecure_channel(f"{LOCATION_SERVICE_HOST}:{LOCATION_SERVICE_PORT}")
+    return location_service_pb2_grpc.LocationServiceStub(channel)
 
 
 @router.get("/breakdown", summary="UC09 – Percentage breakdown of trip revenue")
@@ -56,6 +68,21 @@ def revenue_breakdown(
     if not row or row["trip_count"] == 0:
         raise HTTPException(status_code=404, detail="No trips found for the given filters.")
 
+    # ── gRPC ao Location Service (só se foi passado zone_id)
+    zone_name = None
+    borough   = None
+    if zone_id is not None:
+        try:
+            stub = _get_location_stub()
+            loc_response = stub.GetZoneName(
+                location_service_pb2.ZoneNameRequest(zone_id=zone_id),
+                timeout=5,
+            )
+            zone_name = loc_response.zone_name or None
+            borough   = loc_response.borough   or None
+        except grpc.RpcError:
+            pass  
+
     avg_total = float(row["avg_total"])
     avg_fare  = float(row["avg_fare"])
     avg_tip   = float(row["avg_tip"])
@@ -70,6 +97,8 @@ def revenue_breakdown(
     return {
         "filters_applied": {
             "zone_id":    zone_id,
+            "zone_name":  zone_name,
+            "borough":    borough,
             "zone_type":  zone_type,
             "start_date": start_date,
             "end_date":   end_date,
