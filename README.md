@@ -27,6 +27,7 @@ docker compose up --build
 
 python location-service/seed.py
 python demand-service/seed.py
+python demand-service/seed_extra.py ( por precisar de mais meses, para se observar o correto funcionamento)
 python payment-service/seed.py
 python trip-service/seed.py
 python revenue-service/seed.py
