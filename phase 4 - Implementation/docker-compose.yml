@@ -79,6 +79,26 @@ services:
       retries: 5
       start_period: 60s
 
+  # ─── PostgreSQL — Revenue ──────────────────────────────────────────────────
+  db-revenue:
+    image: postgres:16-alpine
+    container_name: urbanpulse-db-revenue
+    environment:
+      POSTGRES_DB: revenue_db
+      POSTGRES_USER: urbanpulse
+      POSTGRES_PASSWORD: urbanpulse
+    volumes:
+      - ./revenue-service/db:/docker-entrypoint-initdb.d
+      - ./revenue-service/db-data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U urbanpulse -d revenue_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
   # ─── Location Service ──────────────────────────────────────────────────────
   location-api:
     build:
@@ -146,6 +166,23 @@ services:
       trip-db:
         condition: service_healthy
 
+  # ─── Revenue Service ───────────────────────────────────────────────────────
+  revenue-service:
+    build:
+      context: ./revenue-service
+    container_name: urbanpulse-revenue
+    environment:
+      DATABASE_URL: postgresql://urbanpulse:urbanpulse@db-revenue:5432/revenue_db
+      TRIP_SERVICE_URL: trip-api:50051
+    ports:
+      - "8007:8007"
+      - "50055:50055"
+    depends_on:
+      db-revenue:
+        condition: service_healthy
+      trip-api:
+        condition: service_started
+
   # ─── Analytics Service ─────────────────────────────────────────────────────
   analytics-api:
     build:
@@ -155,7 +192,8 @@ services:
       LOCATION_SERVICE_URL: location-api:50054
       DEMAND_SERVICE_URL: demand-service:50053
       PAYMENT_SERVICE_URL: payment-api:50052
-      TRIP_SERVICE_URL: trip-api:50051 
+      TRIP_SERVICE_URL: trip-api:50051
+      REVENUE_SERVICE_URL: revenue-service:50055
     ports:
       - "8003:8003"
     depends_on:
@@ -163,3 +201,4 @@ services:
       - demand-service
       - payment-api
       - trip-api
+      - revenue-service
