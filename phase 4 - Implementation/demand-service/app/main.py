@@ -9,7 +9,7 @@ grpc_server_instance = None
 async def lifespan(app: FastAPI):
     global grpc_server_instance
     grpc_server_instance = serve_grpc()
-    print("🚀 Demand Service gRPC a correr na porta 50053!")
+    print("Demand Service gRPC na porta 50053!")
     yield
     grpc_server_instance.stop(0)
 
