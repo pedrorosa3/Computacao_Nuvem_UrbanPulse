@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x14\x64\x65mand_service.proto\x12\x06\x64\x65mand\"$\n\x11ZoneDemandRequest\x12\x0f\n\x07zone_id\x18\x01 \x01(\x05\"\x8e\x01\n\x12ZoneDemandResponse\x12\x43\n\rhourly_counts\x18\x01 \x03(\x0b\x32,.demand.ZoneDemandResponse.HourlyCountsEntry\x1a\x33\n\x11HourlyCountsEntry\x12\x0b\n\x03key\x18\x01 \x01(\x05\x12\r\n\x05value\x18\x02 \x01(\x05:\x02\x38\x01\x32]\n\rDemandService\x12L\n\x13GetZoneHourlyDemand\x12\x19.demand.ZoneDemandRequest\x1a\x1a.demand.ZoneDemandResponseb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x14\x64\x65mand_service.proto\x12\x06\x64\x65mand\"$\n\x11ZoneDemandRequest\x12\x0f\n\x07zone_id\x18\x01 \x01(\x05\"\xa0\x01\n\x12ZoneDemandResponse\x12\x43\n\rhourly_counts\x18\x01 \x03(\x0b\x32,.demand.ZoneDemandResponse.HourlyCountsEntry\x12\x10\n\x08peak_day\x18\x02 \x01(\t\x1a\x33\n\x11HourlyCountsEntry\x12\x0b\n\x03key\x18\x01 \x01(\x05\x12\r\n\x05value\x18\x02 \x01(\x05:\x02\x38\x01\"&\n\x12GroupDemandRequest\x12\x10\n\x08zone_ids\x18\x01 \x03(\x05\"i\n\x13GroupDemandResponse\x12\x11\n\tpeak_hour\x18\x01 \x01(\x05\x12\x1c\n\x14\x61vg_volatility_index\x18\x02 \x01(\x02\x12!\n\x19volatility_classification\x18\x03 \x01(\t2\xa8\x01\n\rDemandService\x12L\n\x13GetZoneHourlyDemand\x12\x19.demand.ZoneDemandRequest\x1a\x1a.demand.ZoneDemandResponse\x12I\n\x0eGetGroupDemand\x12\x1a.demand.GroupDemandRequest\x1a\x1b.demand.GroupDemandResponseb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -36,9 +36,13 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_ZONEDEMANDREQUEST']._serialized_start=32
   _globals['_ZONEDEMANDREQUEST']._serialized_end=68
   _globals['_ZONEDEMANDRESPONSE']._serialized_start=71
-  _globals['_ZONEDEMANDRESPONSE']._serialized_end=213
-  _globals['_ZONEDEMANDRESPONSE_HOURLYCOUNTSENTRY']._serialized_start=162
-  _globals['_ZONEDEMANDRESPONSE_HOURLYCOUNTSENTRY']._serialized_end=213
-  _globals['_DEMANDSERVICE']._serialized_start=215
-  _globals['_DEMANDSERVICE']._serialized_end=308
+  _globals['_ZONEDEMANDRESPONSE']._serialized_end=231
+  _globals['_ZONEDEMANDRESPONSE_HOURLYCOUNTSENTRY']._serialized_start=180
+  _globals['_ZONEDEMANDRESPONSE_HOURLYCOUNTSENTRY']._serialized_end=231
+  _globals['_GROUPDEMANDREQUEST']._serialized_start=233
+  _globals['_GROUPDEMANDREQUEST']._serialized_end=271
+  _globals['_GROUPDEMANDRESPONSE']._serialized_start=273
+  _globals['_GROUPDEMANDRESPONSE']._serialized_end=378
+  _globals['_DEMANDSERVICE']._serialized_start=381
+  _globals['_DEMANDSERVICE']._serialized_end=549
 # @@protoc_insertion_point(module_scope)
