@@ -12,7 +12,7 @@ services:
       - ./revenue-service/db:/docker-entrypoint-initdb.d
       - ./revenue-service/db-data:/var/lib/postgresql/data
     ports:
-      - "5435:5432"
+      - "5437:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U urbanpulse -d revenue_db"]
       interval: 5s
@@ -33,7 +33,7 @@ services:
       - ./demand-service/db:/docker-entrypoint-initdb.d
       - ./demand-service/db-data:/var/lib/postgresql/data
     ports:
-      - "5433:5432"
+      - "5434:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U urbanpulse -d demand_db"]
       interval: 5s
@@ -50,7 +50,7 @@ services:
     environment:
       DATABASE_URL: postgresql://urbanpulse:urbanpulse@db-revenue:5432/revenue_db
     ports:
-      - "8001:8001"
+      - "8007:8001"
     depends_on:
       db-revenue:
         condition: service_healthy

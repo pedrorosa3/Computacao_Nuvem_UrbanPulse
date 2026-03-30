@@ -6,7 +6,7 @@ import os
 # ── Config ───────────────────────────────────────────────────────────────────
 DB_CONFIG = {
     "host":     "localhost",
-    "port":     5435,
+    "port":     5437,
     "dbname":   "revenue_db",
     "user":     "urbanpulse",
     "password": "urbanpulse",

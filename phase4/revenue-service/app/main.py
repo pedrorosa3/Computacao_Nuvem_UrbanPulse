@@ -1,5 +1,7 @@
+import threading
 from fastapi import FastAPI
 from app.routers import avg_fare, breakdown, fare_per_km
+from app.grpc_server import serve as grpc_serve
 
 app = FastAPI(
     title="UrbanPulse – Revenue & Pricing Intelligence API",
@@ -10,6 +12,13 @@ app = FastAPI(
 app.include_router(avg_fare.router,    prefix="/revenue")
 app.include_router(breakdown.router,   prefix="/revenue")
 app.include_router(fare_per_km.router, prefix="/revenue")
+
+
+@app.on_event("startup")
+def startup_grpc():
+    grpc_server = grpc_serve()
+    t = threading.Thread(target=grpc_server.wait_for_termination, daemon=True)
+    t.start()
 
 
 @app.get("/health")
