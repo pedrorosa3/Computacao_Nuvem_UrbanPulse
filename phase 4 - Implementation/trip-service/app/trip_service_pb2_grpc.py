@@ -3,9 +3,9 @@
 import grpc
 import warnings
 
-from . import trip_service_pb2 as trip__service__pb2
+from app import trip_service_pb2 as trip__service__pb2
 
-GRPC_GENERATED_VERSION = '1.67.1'
+GRPC_GENERATED_VERSION = '1.78.0'
 GRPC_VERSION = grpc.__version__
 _version_not_supported = False
 
@@ -18,7 +18,7 @@ except ImportError:
 if _version_not_supported:
     raise RuntimeError(
         f'The grpc package installed is at version {GRPC_VERSION},'
-        + f' but the generated code in trip_service_pb2_grpc.py depends on'
+        + ' but the generated code in trip_service_pb2_grpc.py depends on'
         + f' grpcio>={GRPC_GENERATED_VERSION}.'
         + f' Please upgrade your grpc module to grpcio>={GRPC_GENERATED_VERSION}'
         + f' or downgrade your generated code using grpcio-tools<={GRPC_VERSION}.'
@@ -49,6 +49,11 @@ class TripServiceStub(object):
                 request_serializer=trip__service__pb2.SuspiciousTripsRequest.SerializeToString,
                 response_deserializer=trip__service__pb2.SuspiciousTripsResponse.FromString,
                 _registered_method=True)
+        self.GetDistanceByZone = channel.unary_unary(
+                '/trips.TripService/GetDistanceByZone',
+                request_serializer=trip__service__pb2.DistanceByZoneRequest.SerializeToString,
+                response_deserializer=trip__service__pb2.DistanceByZoneResponse.FromString,
+                _registered_method=True)
 
 
 class TripServiceServicer(object):
@@ -75,6 +80,13 @@ class TripServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def GetDistanceByZone(self, request, context):
+        """UC10 — Revenue Service: distância média por zona (para cálculo de preço/km)
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_TripServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -92,6 +104,11 @@ def add_TripServiceServicer_to_server(servicer, server):
                     servicer.GetSuspiciousTrips,
                     request_deserializer=trip__service__pb2.SuspiciousTripsRequest.FromString,
                     response_serializer=trip__service__pb2.SuspiciousTripsResponse.SerializeToString,
+            ),
+            'GetDistanceByZone': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetDistanceByZone,
+                    request_deserializer=trip__service__pb2.DistanceByZoneRequest.FromString,
+                    response_serializer=trip__service__pb2.DistanceByZoneResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -175,6 +192,33 @@ class TripService(object):
             '/trips.TripService/GetSuspiciousTrips',
             trip__service__pb2.SuspiciousTripsRequest.SerializeToString,
             trip__service__pb2.SuspiciousTripsResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetDistanceByZone(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/trips.TripService/GetDistanceByZone',
+            trip__service__pb2.DistanceByZoneRequest.SerializeToString,
+            trip__service__pb2.DistanceByZoneResponse.FromString,
             options,
             channel_credentials,
             insecure,

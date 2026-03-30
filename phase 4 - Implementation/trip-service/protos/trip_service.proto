@@ -11,6 +11,9 @@ service TripService {
 
   // UC20 — Analytics Service: viagens suspeitas
   rpc GetSuspiciousTrips (SuspiciousTripsRequest) returns (SuspiciousTripsResponse);
+
+  // UC10 — Revenue Service: distância média por zona (para cálculo de preço/km)
+  rpc GetDistanceByZone (DistanceByZoneRequest) returns (DistanceByZoneResponse);
 }
 
 // ── UC14 ─────────────────────────────────────────────────────────────────────
@@ -60,4 +63,21 @@ message SuspiciousTrip {
 message SuspiciousTripsResponse {
   repeated SuspiciousTrip trips       = 1;
   int32                   total_found = 2;
+}
+
+// ── UC10 ─────────────────────────────────────────────────────────────────────
+message DistanceByZoneRequest {
+  string zone_type = 1;  // "pickup" ou "dropoff"
+  int32  year      = 2;  // 0 = sem filtro
+  int32  month     = 3;  // 0 = sem filtro
+}
+
+message ZoneDistanceInfo {
+  int32 zone_id      = 1;
+  float avg_distance = 2;  // km médio das viagens nessa zona
+  int32 trip_count   = 3;  // nº de viagens consideradas
+}
+
+message DistanceByZoneResponse {
+  repeated ZoneDistanceInfo zones = 1;
 }
