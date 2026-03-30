@@ -4,17 +4,25 @@ import grpc
 import os
 
 from app import trip_service_pb2, trip_service_pb2_grpc
+from app import location_service_pb2, location_service_pb2_grpc
 from app.db.connection import get_conn
 
 router = APIRouter()
 
-TRIP_SERVICE_HOST = os.getenv("TRIP_SERVICE_HOST", "trip-api")
-TRIP_SERVICE_PORT = os.getenv("TRIP_SERVICE_PORT", "50051")
+TRIP_SERVICE_HOST     = os.getenv("TRIP_SERVICE_HOST",     "trip-api")
+TRIP_SERVICE_PORT     = os.getenv("TRIP_SERVICE_PORT",     "50051")
+LOCATION_SERVICE_HOST = os.getenv("LOCATION_SERVICE_HOST", "location-api")
+LOCATION_SERVICE_PORT = os.getenv("LOCATION_SERVICE_PORT", "50054")
 
 
 def _get_trip_stub():
     channel = grpc.insecure_channel(f"{TRIP_SERVICE_HOST}:{TRIP_SERVICE_PORT}")
     return trip_service_pb2_grpc.TripServiceStub(channel)
+
+
+def _get_location_stub():
+    channel = grpc.insecure_channel(f"{LOCATION_SERVICE_HOST}:{LOCATION_SERVICE_PORT}")
+    return location_service_pb2_grpc.LocationServiceStub(channel)
 
 
 @router.get("/fare-per-km", summary="UC10 – Preço médio por km por zona")
@@ -62,7 +70,7 @@ def fare_per_km(
 
     fare_map = {row["zone_id"]: {"avg_fare": float(row["avg_fare"]), "trip_count": row["trip_count"]} for row in rows}
 
-    # ── gRPC ao Trip Service ──────────────────────────────────────────────────
+    # ── gRPC ao Trip Service
     try:
         stub = _get_trip_stub()
         grpc_response = stub.GetDistanceByZone(
@@ -78,14 +86,30 @@ def fare_per_km(
 
     distance_map = {z.zone_id: z.avg_distance for z in grpc_response.zones}
 
-    # ── Cruzar e calcular ─────────────────────────────────────────────────────
+    # ── gRPC ao Location Service 
+    zone_ids = list(fare_map.keys())
+    zone_info: dict[int, dict] = {}
+    try:
+        loc_stub = _get_location_stub()
+        loc_response = loc_stub.GetZoneNames(
+            location_service_pb2.ZoneNamesRequest(zone_ids=zone_ids),
+            timeout=5,
+        )
+        zone_info = {z.zone_id: {"zone_name": z.zone_name, "borough": z.borough} for z in loc_response.zones}
+    except grpc.RpcError:
+        pass  
+
+    
     results = []
     for zone_id, fd in fare_map.items():
         avg_dist = distance_map.get(zone_id)
         if not avg_dist or avg_dist <= 0:
             continue
+        info = zone_info.get(zone_id, {})
         results.append({
             "zone_id":         zone_id,
+            "zone_name":       info.get("zone_name"),
+            "borough":         info.get("borough"),
             "fare_per_km":     round(fd["avg_fare"] / avg_dist, 4),
             "avg_fare":        round(fd["avg_fare"], 4),
             "avg_distance_km": round(avg_dist, 4),
