@@ -4,6 +4,7 @@ package revenue;
 
 service RevenueService {
   rpc GetTripRevenues (TripRevenueRequest) returns (TripRevenueResponse);
+  rpc GetZoneGroupRevenue (ZoneGroupRevenueRequest) returns (ZoneGroupRevenueResponse);
 }
 
 message TripRevenueRequest {
@@ -11,12 +12,22 @@ message TripRevenueRequest {
 }
 
 message TripRevenueInfo {
-  int32 trip_id     = 1;
-  float fare_amount = 2;
+  int32 trip_id      = 1;
+  float fare_amount  = 2;
   float total_amount = 3;
-  float tip_amount  = 4;
+  float tip_amount   = 4;
 }
 
 message TripRevenueResponse {
   repeated TripRevenueInfo revenues = 1;
+}
+
+message ZoneGroupRevenueRequest {
+  repeated int32 zone_ids = 1;
+}
+
+message ZoneGroupRevenueResponse {
+  float avg_fare    = 1;
+  float avg_tip     = 2;
+  float avg_tip_pct = 3;
 }

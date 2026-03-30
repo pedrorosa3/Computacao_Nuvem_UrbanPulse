@@ -25,7 +25,7 @@ class PaymentServicer(payment_service_pb2_grpc.PaymentServiceServicer):
             db.close()
 
     def GetPaymentDistribution(self, request, context):
-        """Devolve a percentagem de pagamentos card vs cash."""
+        """Devolve a percentagem de pagamentos card vs cash (global)."""
         db = SessionLocal()
         try:
             query = db.query(
@@ -46,6 +46,35 @@ class PaymentServicer(payment_service_pb2_grpc.PaymentServiceServicer):
             cash_pct = round(dist.get("cash", 0) * 100.0 / total, 2) if total else 0.0
 
             return payment_service_pb2.PaymentDistributionResponse(
+                card_payment_pct=card_pct,
+                cash_payment_pct=cash_pct,
+            )
+        finally:
+            db.close()
+
+    def GetZoneGroupPayment(self, request, context):
+        """Devolve a percentagem de pagamentos card vs cash para um grupo de zonas."""
+        zone_ids = list(request.zone_ids)
+
+        if not zone_ids:
+            return payment_service_pb2.ZoneGroupPaymentResponse()
+
+        db = SessionLocal()
+        try:
+            results = db.query(
+                Trip.payment_type,
+                func.count(Trip.id).label("cnt")
+            ).filter(
+                Trip.pickup_zone_id.in_(zone_ids)
+            ).group_by(Trip.payment_type).all()
+
+            total = sum(r.cnt for r in results)
+            dist = {r.payment_type: r.cnt for r in results}
+
+            card_pct = round(dist.get("card", 0) * 100.0 / total, 2) if total else 0.0
+            cash_pct = round(dist.get("cash", 0) * 100.0 / total, 2) if total else 0.0
+
+            return payment_service_pb2.ZoneGroupPaymentResponse(
                 card_payment_pct=card_pct,
                 cash_payment_pct=cash_pct,
             )

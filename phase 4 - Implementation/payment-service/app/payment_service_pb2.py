@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x15payment_service.proto\x12\x07payment\"\"\n\x0ePaymentRequest\x12\x10\n\x08trip_ids\x18\x01 \x03(\x05\"P\n\x0fTripPaymentInfo\x12\x13\n\x0b\x66\x61re_amount\x18\x01 \x01(\x02\x12\x12\n\ntip_amount\x18\x02 \x01(\x02\x12\x14\n\x0cpayment_type\x18\x03 \x01(\t\"\x96\x01\n\x0fPaymentResponse\x12\x38\n\x08payments\x18\x01 \x03(\x0b\x32&.payment.PaymentResponse.PaymentsEntry\x1aI\n\rPaymentsEntry\x12\x0b\n\x03key\x18\x01 \x01(\x05\x12\'\n\x05value\x18\x02 \x01(\x0b\x32\x18.payment.TripPaymentInfo:\x02\x38\x01\"B\n\x1aPaymentDistributionRequest\x12\x12\n\nstart_date\x18\x01 \x01(\t\x12\x10\n\x08\x65nd_date\x18\x02 \x01(\t\"Q\n\x1bPaymentDistributionResponse\x12\x18\n\x10\x63\x61rd_payment_pct\x18\x01 \x01(\x02\x12\x18\n\x10\x63\x61sh_payment_pct\x18\x02 \x01(\x02\x32\xbd\x01\n\x0ePaymentService\x12\x46\n\x11GetPaymentDetails\x12\x17.payment.PaymentRequest\x1a\x18.payment.PaymentResponse\x12\x63\n\x16GetPaymentDistribution\x12#.payment.PaymentDistributionRequest\x1a$.payment.PaymentDistributionResponseb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x15payment_service.proto\x12\x07payment\"\"\n\x0ePaymentRequest\x12\x10\n\x08trip_ids\x18\x01 \x03(\x05\"P\n\x0fTripPaymentInfo\x12\x13\n\x0b\x66\x61re_amount\x18\x01 \x01(\x02\x12\x12\n\ntip_amount\x18\x02 \x01(\x02\x12\x14\n\x0cpayment_type\x18\x03 \x01(\t\"\x96\x01\n\x0fPaymentResponse\x12\x38\n\x08payments\x18\x01 \x03(\x0b\x32&.payment.PaymentResponse.PaymentsEntry\x1aI\n\rPaymentsEntry\x12\x0b\n\x03key\x18\x01 \x01(\x05\x12\'\n\x05value\x18\x02 \x01(\x0b\x32\x18.payment.TripPaymentInfo:\x02\x38\x01\"B\n\x1aPaymentDistributionRequest\x12\x12\n\nstart_date\x18\x01 \x01(\t\x12\x10\n\x08\x65nd_date\x18\x02 \x01(\t\"Q\n\x1bPaymentDistributionResponse\x12\x18\n\x10\x63\x61rd_payment_pct\x18\x01 \x01(\x02\x12\x18\n\x10\x63\x61sh_payment_pct\x18\x02 \x01(\x02\"+\n\x17ZoneGroupPaymentRequest\x12\x10\n\x08zone_ids\x18\x01 \x03(\x05\"N\n\x18ZoneGroupPaymentResponse\x12\x18\n\x10\x63\x61rd_payment_pct\x18\x01 \x01(\x02\x12\x18\n\x10\x63\x61sh_payment_pct\x18\x02 \x01(\x02\x32\x99\x02\n\x0ePaymentService\x12\x46\n\x11GetPaymentDetails\x12\x17.payment.PaymentRequest\x1a\x18.payment.PaymentResponse\x12\x63\n\x16GetPaymentDistribution\x12#.payment.PaymentDistributionRequest\x1a$.payment.PaymentDistributionResponse\x12Z\n\x13GetZoneGroupPayment\x12 .payment.ZoneGroupPaymentRequest\x1a!.payment.ZoneGroupPaymentResponseb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -45,6 +45,10 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_PAYMENTDISTRIBUTIONREQUEST']._serialized_end=371
   _globals['_PAYMENTDISTRIBUTIONRESPONSE']._serialized_start=373
   _globals['_PAYMENTDISTRIBUTIONRESPONSE']._serialized_end=454
-  _globals['_PAYMENTSERVICE']._serialized_start=457
-  _globals['_PAYMENTSERVICE']._serialized_end=646
+  _globals['_ZONEGROUPPAYMENTREQUEST']._serialized_start=456
+  _globals['_ZONEGROUPPAYMENTREQUEST']._serialized_end=499
+  _globals['_ZONEGROUPPAYMENTRESPONSE']._serialized_start=501
+  _globals['_ZONEGROUPPAYMENTRESPONSE']._serialized_end=579
+  _globals['_PAYMENTSERVICE']._serialized_start=582
+  _globals['_PAYMENTSERVICE']._serialized_end=863
 # @@protoc_insertion_point(module_scope)

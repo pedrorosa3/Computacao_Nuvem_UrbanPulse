@@ -33,6 +33,7 @@ python trip-service/seed.py
 | Demand Service    | 8002 | 50053 | 5434 |
 | Payment Service   | 8006 | 50052 | 5435 |
 | Trip Service      | 8001 | 50051 | 5436 |
+| Revenue Service   | 8007 | 50055 | 5433 |
 | Analytics Service | 8003 | —     | —    |
 
 **Nota:** Se ao correr o projeto algum serviço falhar com erro de ligação à base de dados, é provável que a porta configurada já esteja em uso no pc.
@@ -45,7 +46,7 @@ Nesse caso, altera a porta do serviço afetado no `docker-compose.yml` global, n
 http://localhost:8000/health
 http://localhost:8000/locations/pickup/ranking
 http://localhost:8000/locations/161/dropoffs
-http://localhost:8000/locations/pairs?min_trips=1
+http://localhost:8000/locations/pairs?min_trips=100
 http://localhost:8000/locations/161/profile
 http://localhost:8000/locations/zones
 
@@ -68,6 +69,8 @@ http://localhost:8001/health
 http://localhost:8001/trips/classification/time-of-day
 http://localhost:8001/trips/route-deviation?summary_only=true
 http://localhost:8001/trips/speed/zones
+
+### Revenue Service
 
 ### Analytics Service
 

@@ -5,7 +5,6 @@ import warnings
 
 from . import payment_service_pb2 as payment__service__pb2
 
-
 GRPC_GENERATED_VERSION = '1.78.0'
 GRPC_VERSION = grpc.__version__
 _version_not_supported = False
@@ -45,6 +44,11 @@ class PaymentServiceStub(object):
                 request_serializer=payment__service__pb2.PaymentDistributionRequest.SerializeToString,
                 response_deserializer=payment__service__pb2.PaymentDistributionResponse.FromString,
                 _registered_method=True)
+        self.GetZoneGroupPayment = channel.unary_unary(
+                '/payment.PaymentService/GetZoneGroupPayment',
+                request_serializer=payment__service__pb2.ZoneGroupPaymentRequest.SerializeToString,
+                response_deserializer=payment__service__pb2.ZoneGroupPaymentResponse.FromString,
+                _registered_method=True)
 
 
 class PaymentServiceServicer(object):
@@ -62,6 +66,12 @@ class PaymentServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def GetZoneGroupPayment(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_PaymentServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -74,6 +84,11 @@ def add_PaymentServiceServicer_to_server(servicer, server):
                     servicer.GetPaymentDistribution,
                     request_deserializer=payment__service__pb2.PaymentDistributionRequest.FromString,
                     response_serializer=payment__service__pb2.PaymentDistributionResponse.SerializeToString,
+            ),
+            'GetZoneGroupPayment': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetZoneGroupPayment,
+                    request_deserializer=payment__service__pb2.ZoneGroupPaymentRequest.FromString,
+                    response_serializer=payment__service__pb2.ZoneGroupPaymentResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -130,6 +145,33 @@ class PaymentService(object):
             '/payment.PaymentService/GetPaymentDistribution',
             payment__service__pb2.PaymentDistributionRequest.SerializeToString,
             payment__service__pb2.PaymentDistributionResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetZoneGroupPayment(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/payment.PaymentService/GetZoneGroupPayment',
+            payment__service__pb2.ZoneGroupPaymentRequest.SerializeToString,
+            payment__service__pb2.ZoneGroupPaymentResponse.FromString,
             options,
             channel_credentials,
             insecure,
