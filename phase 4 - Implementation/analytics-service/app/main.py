@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.routers import uc19_mobility_comparison, uc18_duration_tip
+from app.routers import uc19_mobility_comparison, uc18_duration_tip, uc20_anomalous_trips
 
 
 app = FastAPI(
@@ -10,6 +10,7 @@ app = FastAPI(
 
 app.include_router(uc18_duration_tip.router)
 app.include_router(uc19_mobility_comparison.router)
+app.include_router(uc20_anomalous_trips.router)
 
 
 @app.get("/health")
