@@ -1,0 +1,99 @@
+from fastapi import APIRouter, Query, HTTPException
+from datetime import date
+from app.database import execute_query
+
+router = APIRouter()
+
+
+def safe_float(val):
+    if val is None:
+        return None
+    f = float(val)
+    return None if f != f else f
+
+
+@router.get(
+    "/trips/classification/time-of-day",
+    summary="UC01 — Classify trips by time of day",
+    description=(
+        "Returns counts and percentages of trips grouped by time-of-day period "
+        "(peak / off_peak / night). Uses the pre-computed 'time_class' column. "
+        "Optionally filtered by date range and/or pickup zone."
+    ),
+)
+def classify_trips_by_time_of_day(
+    start_date:     date = Query(None, description="Filter from this date (inclusive)"),
+    end_date:       date = Query(None, description="Filter up to this date (inclusive)"),
+    pickup_zone_id:  int = Query(None, description="Filter by pickup zone ID"),
+):
+    if start_date and end_date and end_date < start_date:
+        raise HTTPException(status_code=400, detail="end_date must be after start_date")
+
+    filters = []
+    params  = []
+
+    if start_date:
+        filters.append("DATE(pickup_datetime) >= %s")
+        params.append(start_date)
+    if end_date:
+        filters.append("DATE(pickup_datetime) <= %s")
+        params.append(end_date)
+    if pickup_zone_id is not None:
+        filters.append("pickup_zone_id = %s")
+        params.append(pickup_zone_id)
+
+    where = ("WHERE " + " AND ".join(filters)) if filters else ""
+
+    query = f"""
+        WITH totals AS (
+            SELECT COUNT(*) AS total FROM trips {where}
+        )
+        SELECT
+            time_class                                                              AS period,
+            COUNT(*)                                                                AS trip_count,
+            ROUND((COUNT(*) * 100.0 / NULLIF(t.total, 0))::numeric, 2)             AS percentage,
+            t.total                                                                 AS total_trips
+        FROM trips
+        CROSS JOIN totals t
+        {where}
+        GROUP BY time_class, t.total
+        ORDER BY trip_count DESC
+    """
+
+    # params duplicados: uma vez para o CTE, outra para o SELECT principal
+    rows = execute_query(query, tuple(params) + tuple(params))
+
+    if not rows:
+        return {
+            "filters": {
+                "start_date":     str(start_date)    if start_date    else None,
+                "end_date":       str(end_date)      if end_date      else None,
+                "pickup_zone_id": pickup_zone_id,
+            },
+            "total_trips": 0,
+            "periods": [],
+        }
+
+    total = int(rows[0]["total_trips"])
+
+    return {
+        "filters": {
+            "start_date":     str(start_date)    if start_date    else None,
+            "end_date":       str(end_date)      if end_date      else None,
+            "pickup_zone_id": pickup_zone_id,
+        },
+        "period_definitions": {
+            "peak":     "07:00-09:59 and 16:00-19:59",
+            "off_peak": "06:00-15:59 and 20:00-21:59",
+            "night":    "22:00-05:59",
+        },
+        "total_trips": total,
+        "periods": [
+            {
+                "period":     row["period"],
+                "trip_count": int(row["trip_count"]),
+                "percentage": safe_float(row["percentage"]) or 0.0,
+            }
+            for row in rows
+        ],
+    }
