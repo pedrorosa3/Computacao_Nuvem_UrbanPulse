@@ -91,4 +91,4 @@ http://localhost:8007/revenue/avg-fare-by-zone
 http://localhost:8007/revenue/breakdown
 http://localhost:8007/revenue/breakdown?zone_id=161&year=2015
 http://localhost:8007/revenue/fare-per-km
-http://localhost:8007/fare-per-km?sort=asc&limit=5
+http://localhost:8007/revenue/fare-per-km?sort=asc&limit=5
