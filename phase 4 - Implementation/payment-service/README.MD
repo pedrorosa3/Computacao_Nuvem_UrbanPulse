@@ -20,7 +20,7 @@ O main.py utiliza o FastAPI para iniciar a API propriamente dita.
 
 O database.py é o script responsável por fazer a ligação entre o container payment-api e o container payment-db. Este último apenas pode ser acedido através do payment-api.
 
-Os routers é onde está a lógica da aplicação propriamente dita (UC11, UC12, UC13).
+Os routers é onde está a lógica da aplicação propriamente dita (UC11, UC12, UC13, UC14).
 
 # Como correr:
 
