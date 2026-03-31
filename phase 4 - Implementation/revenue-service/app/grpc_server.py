@@ -18,9 +18,9 @@ class RevenueServiceServicer(revenue_service_pb2_grpc.RevenueServiceServicer):
             with conn.cursor() as cur:
                 cur.execute(
                     """
-                    SELECT trip_id, fare_amount, total_amount, tip_amount
+                    SELECT id AS trip_id, fare_amount, total_amount, tip_amount
                     FROM trips
-                    WHERE trip_id = ANY(%s)
+                    WHERE id = ANY(%s)
                     """,
                     (trip_ids,)
                 )

@@ -1,5 +1,6 @@
 import grpc
 import os
+import math
 from fastapi import APIRouter, Query, HTTPException
 from typing import Optional
 from app import (
@@ -13,6 +14,17 @@ router = APIRouter()
 
 TRIP_SERVICE_URL    = os.getenv("TRIP_SERVICE_URL",    "trip-api:50051")
 REVENUE_SERVICE_URL = os.getenv("REVENUE_SERVICE_URL", "revenue-service:50055")
+
+
+def safe_float(value, default=0.0):
+    """Converte para float seguro para JSON (sem inf/nan)."""
+    try:
+        f = float(value)
+        if math.isnan(f) or math.isinf(f):
+            return default
+        return round(f, 4)
+    except (TypeError, ValueError):
+        return default
 
 
 def _get_suspicious_trips(min_score: int, start_date: str, end_date: str, limit: int):
@@ -44,10 +56,10 @@ def _get_trip_revenues(trip_ids: list[int]):
     ),
 )
 def anomalous_trips(
-    min_suspicion_score: int          = Query(1, ge=1, le=7, description="Score mínimo (1-7)"),
+    min_suspicion_score: int           = Query(1, ge=1, le=7, description="Score mínimo (1-7)"),
     start_date:          Optional[str] = Query(None, example="2015-01-01"),
     end_date:            Optional[str] = Query(None, example="2015-01-31"),
-    limit:               int          = Query(50, ge=1, le=200),
+    limit:               int           = Query(50, ge=1, le=200),
 ):
     # 1. Trip Service → viagens suspeitas
     try:
@@ -57,15 +69,15 @@ def anomalous_trips(
     except grpc.RpcError as e:
         raise HTTPException(status_code=503, detail=f"Trip Service indisponível: {e.details()}")
 
-    trips     = list(suspicious_resp.trips)
+    trips       = list(suspicious_resp.trips)
     total_found = suspicious_resp.total_found
 
     if not trips:
         return {
-            "total_found":          0,
-            "returned":             0,
-            "min_suspicion_score":  min_suspicion_score,
-            "trips":                [],
+            "total_found":         0,
+            "returned":            0,
+            "min_suspicion_score": min_suspicion_score,
+            "trips":               [],
         }
 
     trip_ids = [t.trip_id for t in trips]
@@ -97,9 +109,9 @@ def anomalous_trips(
             "trip_id":          t.trip_id,
             "pickup_zone":      t.pickup_zone,
             "dropoff_zone":     t.dropoff_zone,
-            "trip_distance_km": round(t.trip_distance_km, 2),
-            "fare_amount":      round(t.fare_amount, 2),
-            "deviation_index":  round(t.deviation_index, 4),
+            "trip_distance_km": safe_float(t.trip_distance_km),
+            "fare_amount":      safe_float(t.fare_amount),
+            "deviation_index":  safe_float(t.deviation_index),
             "deviation_class":  t.deviation_class,
             "suspicion_score":  t.suspicion_score,
             "anomaly_label":    label,
@@ -108,13 +120,15 @@ def anomalous_trips(
         # Enriquecer com Revenue Service
         if revenue_used and t.trip_id in revenue_map:
             rev = revenue_map[t.trip_id]
-            fare_discrepancy = round(abs(t.fare_amount - rev.fare_amount), 2)
+            fare_trip    = safe_float(t.fare_amount)
+            fare_revenue = safe_float(rev.fare_amount)
+            discrepancy  = round(abs(fare_trip - fare_revenue), 2)
             trip_data["revenue"] = {
-                "fare_amount":       round(rev.fare_amount,  2),
-                "total_amount":      round(rev.total_amount, 2),
-                "tip_amount":        round(rev.tip_amount,   2),
-                "fare_discrepancy":  fare_discrepancy,
-                "suspicious_fare":   fare_discrepancy > 5.0,
+                "fare_amount":      safe_float(rev.fare_amount),
+                "total_amount":     safe_float(rev.total_amount),
+                "tip_amount":       safe_float(rev.tip_amount),
+                "fare_discrepancy": discrepancy,
+                "suspicious_fare":  discrepancy > 5.0,
             }
 
         result_trips.append(trip_data)
