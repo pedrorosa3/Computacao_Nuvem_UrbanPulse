@@ -60,7 +60,6 @@ def classify_trips_by_time_of_day(
         ORDER BY trip_count DESC
     """
 
-    # params duplicados: uma vez para o CTE, outra para o SELECT principal
     rows = execute_query(query, tuple(params) + tuple(params))
 
     if not rows:
