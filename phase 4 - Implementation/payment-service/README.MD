@@ -6,7 +6,7 @@ As tabelas são criadas automaticamente através do init.sql quando o container 
 
 O ficheiro do dataset está dentro da pasta data. Para o payment-db conter os dados necessários, temos que correr o seed.py.
 
-O seed.py só pode ser corrido depois do container estar ligado. É um script que envia dados do meu pc para o container, via porta 5434 (usei a 5434 para não chocar com o Location Service).
+O seed.py só pode ser corrido depois do container estar ligado. É um script que envia dados do meu pc para o container, via porta 5435.
 
 O seed.py está limitado a 10000 viagens, só para testes. Depois desbloquear.
 
