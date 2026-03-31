@@ -36,6 +36,11 @@ docker-compose up --build
 
 python seed.py - Noutro terminal. Este script é para colocar dados na DB. Antes de o correr, a DB está vazia.
 
+#Endpoints todos:
+
+http://localhost:8006/docs
+
+
 # Alguns endpoints para testar:
 
 http://localhost:8006/api/v1/payments/tips/comparison
