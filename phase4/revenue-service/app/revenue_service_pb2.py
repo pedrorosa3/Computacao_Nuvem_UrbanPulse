@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x15revenue_service.proto\x12\x07revenue\"&\n\x12TripRevenueRequest\x12\x10\n\x08trip_ids\x18\x01 \x03(\x05\"a\n\x0fTripRevenueInfo\x12\x0f\n\x07trip_id\x18\x01 \x01(\x05\x12\x13\n\x0b\x66\x61re_amount\x18\x02 \x01(\x02\x12\x14\n\x0ctotal_amount\x18\x03 \x01(\x02\x12\x12\n\ntip_amount\x18\x04 \x01(\x02\"A\n\x13TripRevenueResponse\x12*\n\x08revenues\x18\x01 \x03(\x0b\x32\x18.revenue.TripRevenueInfo2^\n\x0eRevenueService\x12L\n\x0fGetTripRevenues\x12\x1b.revenue.TripRevenueRequest\x1a\x1c.revenue.TripRevenueResponseb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x15revenue_service.proto\x12\x07revenue\"&\n\x12TripRevenueRequest\x12\x10\n\x08trip_ids\x18\x01 \x03(\x05\"a\n\x0fTripRevenueInfo\x12\x0f\n\x07trip_id\x18\x01 \x01(\x05\x12\x13\n\x0b\x66\x61re_amount\x18\x02 \x01(\x02\x12\x14\n\x0ctotal_amount\x18\x03 \x01(\x02\x12\x12\n\ntip_amount\x18\x04 \x01(\x02\"A\n\x13TripRevenueResponse\x12*\n\x08revenues\x18\x01 \x03(\x0b\x32\x18.revenue.TripRevenueInfo\"+\n\x17ZoneGroupRevenueRequest\x12\x10\n\x08zone_ids\x18\x01 \x03(\x05\"R\n\x18ZoneGroupRevenueResponse\x12\x10\n\x08\x61vg_fare\x18\x01 \x01(\x02\x12\x0f\n\x07\x61vg_tip\x18\x02 \x01(\x02\x12\x13\n\x0b\x61vg_tip_pct\x18\x03 \x01(\x02\x32\xba\x01\n\x0eRevenueService\x12L\n\x0fGetTripRevenues\x12\x1b.revenue.TripRevenueRequest\x1a\x1c.revenue.TripRevenueResponse\x12Z\n\x13GetZoneGroupRevenue\x12 .revenue.ZoneGroupRevenueRequest\x1a!.revenue.ZoneGroupRevenueResponseb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -37,6 +37,10 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_TRIPREVENUEINFO']._serialized_end=171
   _globals['_TRIPREVENUERESPONSE']._serialized_start=173
   _globals['_TRIPREVENUERESPONSE']._serialized_end=238
-  _globals['_REVENUESERVICE']._serialized_start=240
-  _globals['_REVENUESERVICE']._serialized_end=334
+  _globals['_ZONEGROUPREVENUEREQUEST']._serialized_start=240
+  _globals['_ZONEGROUPREVENUEREQUEST']._serialized_end=283
+  _globals['_ZONEGROUPREVENUERESPONSE']._serialized_start=285
+  _globals['_ZONEGROUPREVENUERESPONSE']._serialized_end=367
+  _globals['_REVENUESERVICE']._serialized_start=370
+  _globals['_REVENUESERVICE']._serialized_end=556
 # @@protoc_insertion_point(module_scope)

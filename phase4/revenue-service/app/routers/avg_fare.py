@@ -1,8 +1,20 @@
 from fastapi import APIRouter, Query, HTTPException
 from typing import Optional
+import grpc
+import os
+
 from app.db.connection import get_conn
+from app import location_service_pb2, location_service_pb2_grpc
 
 router = APIRouter()
+
+LOCATION_SERVICE_HOST = os.getenv("LOCATION_SERVICE_HOST", "location-api")
+LOCATION_SERVICE_PORT = os.getenv("LOCATION_SERVICE_PORT", "50054")
+
+
+def _get_location_stub():
+    channel = grpc.insecure_channel(f"{LOCATION_SERVICE_HOST}:{LOCATION_SERVICE_PORT}")
+    return location_service_pb2_grpc.LocationServiceStub(channel)
 
 
 @router.get("/avg-fare-by-zone", summary="UC08 – Average fare per zone with deviation from global average")
@@ -80,6 +92,20 @@ def avg_fare_by_zone(
             "zones": [],
         }
 
+    # ── gRPC ao Location Service — batch ─────────────────────────────────────
+    zone_ids = [r["zone_id"] for r in rows]
+    zone_info: dict[int, dict] = {}
+
+    try:
+        stub = _get_location_stub()
+        grpc_response = stub.GetZoneNames(
+            location_service_pb2.ZoneNamesRequest(zone_ids=zone_ids),
+            timeout=5,
+        )
+        zone_info = {z.zone_id: {"zone_name": z.zone_name, "borough": z.borough} for z in grpc_response.zones}
+    except grpc.RpcError:
+        pass  # se o location service falhar, devolve sem nomes
+
     global_avg_fare = float(rows[0]["global_avg_fare"])
 
     return {
@@ -95,7 +121,8 @@ def avg_fare_by_zone(
         "zones": [
             {
                 "zone_id":              r["zone_id"],
-                "zone_name":            None,   # TODO: enriquecer via Location Service (gRPC)
+                "zone_name":            zone_info.get(r["zone_id"], {}).get("zone_name"),
+                "borough":              zone_info.get(r["zone_id"], {}).get("borough"),
                 "avg_fare":             float(r["avg_fare"]),
                 "deviation_absolute":   float(r["deviation_absolute"]),
                 "deviation_percentage": float(r["deviation_percentage"]),

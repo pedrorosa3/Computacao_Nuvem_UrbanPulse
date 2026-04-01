@@ -3,9 +3,9 @@
 import grpc
 import warnings
 
-from app import revenue_service_pb2 as revenue__service__pb2
+from . import revenue_service_pb2 as revenue__service__pb2
 
-GRPC_GENERATED_VERSION = '1.80.0'
+GRPC_GENERATED_VERSION = '1.78.0'
 GRPC_VERSION = grpc.__version__
 _version_not_supported = False
 
@@ -39,12 +39,23 @@ class RevenueServiceStub(object):
                 request_serializer=revenue__service__pb2.TripRevenueRequest.SerializeToString,
                 response_deserializer=revenue__service__pb2.TripRevenueResponse.FromString,
                 _registered_method=True)
+        self.GetZoneGroupRevenue = channel.unary_unary(
+                '/revenue.RevenueService/GetZoneGroupRevenue',
+                request_serializer=revenue__service__pb2.ZoneGroupRevenueRequest.SerializeToString,
+                response_deserializer=revenue__service__pb2.ZoneGroupRevenueResponse.FromString,
+                _registered_method=True)
 
 
 class RevenueServiceServicer(object):
     """Missing associated documentation comment in .proto file."""
 
     def GetTripRevenues(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetZoneGroupRevenue(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -57,6 +68,11 @@ def add_RevenueServiceServicer_to_server(servicer, server):
                     servicer.GetTripRevenues,
                     request_deserializer=revenue__service__pb2.TripRevenueRequest.FromString,
                     response_serializer=revenue__service__pb2.TripRevenueResponse.SerializeToString,
+            ),
+            'GetZoneGroupRevenue': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetZoneGroupRevenue,
+                    request_deserializer=revenue__service__pb2.ZoneGroupRevenueRequest.FromString,
+                    response_serializer=revenue__service__pb2.ZoneGroupRevenueResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -86,6 +102,33 @@ class RevenueService(object):
             '/revenue.RevenueService/GetTripRevenues',
             revenue__service__pb2.TripRevenueRequest.SerializeToString,
             revenue__service__pb2.TripRevenueResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetZoneGroupRevenue(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/revenue.RevenueService/GetZoneGroupRevenue',
+            revenue__service__pb2.ZoneGroupRevenueRequest.SerializeToString,
+            revenue__service__pb2.ZoneGroupRevenueResponse.FromString,
             options,
             channel_credentials,
             insecure,
