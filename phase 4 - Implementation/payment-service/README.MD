@@ -6,7 +6,7 @@ As tabelas são criadas automaticamente através do init.sql quando o container 
 
 O ficheiro do dataset está dentro da pasta data. Para o payment-db conter os dados necessários, temos que correr o seed.py.
 
-O seed.py só pode ser corrido depois do container estar ligado. É um script que envia dados do meu pc para o container, via porta 5434 (usei a 5434 para não chocar com o Location Service).
+O seed.py só pode ser corrido depois do container estar ligado. É um script que envia dados do meu pc para o container, via porta 5435.
 
 O seed.py está limitado a 10000 viagens, só para testes. Depois desbloquear.
 
@@ -20,7 +20,7 @@ O main.py utiliza o FastAPI para iniciar a API propriamente dita.
 
 O database.py é o script responsável por fazer a ligação entre o container payment-api e o container payment-db. Este último apenas pode ser acedido através do payment-api.
 
-Os routers é onde está a lógica da aplicação propriamente dita (UC11, UC12, UC13).
+Os routers é onde está a lógica da aplicação propriamente dita (UC11, UC12, UC13, UC14).
 
 # Como correr:
 
@@ -35,6 +35,11 @@ cd "C:\...\Cloud-Computing\phase4\payment-service"
 docker-compose up --build
 
 python seed.py - Noutro terminal. Este script é para colocar dados na DB. Antes de o correr, a DB está vazia.
+
+#Endpoints todos:
+
+http://localhost:8006/docs
+
 
 # Alguns endpoints para testar:
 

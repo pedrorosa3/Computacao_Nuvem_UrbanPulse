@@ -54,8 +54,6 @@ DELETE /trips/invalid/bulk
      → UC21: Remoção em bulk de viagens com dados inválidos
      Parâmetros opcionais: dry_run (true = preview sem apagar)
 
-DELETE /trips/{trip_id}
-     → UC21: Remoção de uma viagem específica por ID
 
 POST /trips
      → UC22: Submissão de uma nova viagem para análise
@@ -108,8 +106,3 @@ UC22 (POST example):
 Documentação interativa (Swagger UI):
   http://localhost:8001/docs
 
-ERROS ESPERADOS
----------------
-  DELETE /trips/invalid/bulk?dry_run=false   → apaga trips inválidas (irreversível sem reseed)
-  DELETE /trips/9999999                      → 404 Not Found
-  POST /trips com dropoff < pickup           → 422 Unprocessable Entity

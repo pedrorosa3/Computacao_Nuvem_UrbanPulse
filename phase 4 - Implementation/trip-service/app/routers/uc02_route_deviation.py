@@ -65,7 +65,7 @@ def get_route_deviation(
                 WHEN 'inefficient' THEN 3
             END
     """
-    # params duplicados: uma vez para o CTE, outra para o SELECT principal
+    
     summary_rows = execute_query(summary_query, tuple(params) + tuple(params))
     total = int(summary_rows[0]["total_trips"]) if summary_rows else 0
 

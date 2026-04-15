@@ -154,7 +154,9 @@ trips["speed_class"]   = speed.apply(lambda x: x[1])
 trips["suspicion_score"]   = trips.apply(compute_suspicion, axis=1)
 trips["payment_type_str"]  = trips["payment_type"].map(PAYMENT_MAP).fillna("unknown")
 
-trips = trips.where(pd.notnull(trips), None)
+trips = trips.where(pd.notnull(trips), other=None)
+trips["avg_speed_kmh"] = trips["avg_speed_kmh"].astype(object).where(trips["avg_speed_kmh"].notna(), None)
+trips["deviation_index"] = trips["deviation_index"].astype(object).where(trips["deviation_index"].notna(), None)
 
 # ── Insert ────────────────────────────────────────────────────────────────────
 cur.execute("TRUNCATE TABLE trips RESTART IDENTITY CASCADE;")
