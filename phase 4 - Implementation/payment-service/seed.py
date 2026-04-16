@@ -6,7 +6,7 @@ DATABASE_URL = "postgresql://admin:password@localhost:5435/payment_db"
 engine = create_engine(DATABASE_URL)
 
 print("A ler o dataset...")
-df = pd.read_csv("data/yellow_tripdata_2015-01_clean.csv", nrows=10000)
+df = pd.read_csv("/home/pedrorosa3/yellow_tripdata_2015-01_clean.csv", nrows=10000)
 
 # Mapear os IDs de pagamento do dataset original para texto
 payment_map = {1: 'card', 2: 'cash', 3: 'no_charge', 4: 'dispute', 5: 'unknown', 6: 'voided'}

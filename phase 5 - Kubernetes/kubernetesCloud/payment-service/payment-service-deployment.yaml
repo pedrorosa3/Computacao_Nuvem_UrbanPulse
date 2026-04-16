@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-deploy
+  namespace: urbanpulse
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: payment-service
+  template:
+    metadata:
+      labels:
+        app: payment-service
+    spec:
+      imagePullSecrets:             # <-- Mantém a segurança do teu repositório privado
+      - name: dockerhub-secret
+      containers:
+      - name: payment-service
+        image: pedrorosa3/payment-service:v5 
+        ports:
+        - containerPort: 8006
+        
+        # GESTÃO DE RECURSOS (Exigência da Fase 5)
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "250m"
+            memory: "256Mi"
+            
+        # LIVENESS PROBE (Para o K8s saber se a API encravou)
+        livenessProbe:
+          httpGet:
+            path: /docs
+            port: 8006
+          initialDelaySeconds: 15
+          periodSeconds: 20
