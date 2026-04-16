@@ -8,6 +8,27 @@ O serviço consome os dados diretamente do **Google BigQuery**, o Data Warehouse
 * **Vantagens:** Não requer a criação de PersistentVolumeClaims (PVCs), não precisa de bases de dados locais a correr no cluster (PostgreSQL) e não exige a injeção manual de dados via ficheiros `.csv` ou scripts de `seed.py`.
 * **Padrão Utilizado:** Seguindo as boas práticas de microserviços sugeridas (Phase 6), utilizámos o padrão *Database per Service*.
 
+### 0 - Preparação do Armazenamento (Google BigQuery)
+
+Como este serviço não utiliza bases de dados locais, a infraestrutura de dados deve ser criada previamente na Consola da Google Cloud (GCP).
+
+Para replicar o ambiente do BigQuery do zero:
+1. Na Consola do GCP, navegar para **BigQuery**.
+2. Criar um novo **Dataset** (ex: `urbanpulse`).
+3. Criar uma nova **Tabela** dentro do dataset, fazendo o upload direto do ficheiro `.csv` já limpo e processado na Fase 1 do projeto.
+4. O esquema (schema) é detetado automaticamente pela Google Cloud.
+5. A partir deste momento, a API Python (FastAPI) consegue consultar os dados via SQL diretamente, sem necessidade de executar scripts de *seed* ou gerir Persistent Volumes.
+
+### 0.5 - Autenticação e Permissões (Service Account)
+Para o microserviço de pagamentos conseguir comunicar de forma segura com o Google BigQuery a partir do Kubernetes, é utilizada uma Google Cloud Service Account.
+
+Para replicar este ambiente:
+1. Na Consola do GCP, ir a **IAM & Admin > Service Accounts**.
+2. Criar uma nova Service Account e atribuir-lhe as funções (roles) de **BigQuery Data Editor** e **BigQuery User**.
+3. Gerar uma chave em formato **JSON** e guardá-la na raiz da pasta do código com o nome `a.json` (ou configurar a variável de ambiente `GOOGLE_APPLICATION_CREDENTIALS` para apontar para o ficheiro correto).
+4. Ao fazer o `docker build`, a imagem já incorpora as credenciais necessárias para autenticação nativa.
+*(Nota: Por motivos de segurança, a imagem alojada no Docker Hub utilizada neste deployment é privada para proteger estas credenciais).*
+
 ## Como Fazer o Deployment no GKE
 
 Como o serviço não tem dependências de armazenamento local, o deployment é direto e não requer upload prévio de ficheiros para o Cloud Shell.
