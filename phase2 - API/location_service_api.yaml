@@ -1,0 +1,460 @@
+openapi: 3.0.3
+info:
+  title: UrbanPulse — Location Service
+  version: 1.0.0
+paths:
+  # UC04 — Ranking de zonas com quota de mercado
+  /locations/pickup/ranking:
+    get:
+      summary: Pickup zone ranking with market share
+      description: >
+        Returns the top pickup zones ranked by number of trips for a given time
+        period. Each zone includes its absolute trip count and its market share
+        percentage relative to the total trips in the same period.
+      operationId: getPickupZoneRanking
+      parameters:
+        - name: start_date
+          in: query
+          required: false
+          description: Start of the period (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+            example: "2025-01-01"
+        - name: end_date
+          in: query
+          required: false
+          description: End of the period (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+            example: "2025-03-31"
+        - name: limit
+          in: query
+          required: false
+          description: Maximum number of zones to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  period:
+                    type: object
+                    properties:
+                      start_date:
+                        type: string
+                        format: date
+                        example: "2025-01-01"
+                      end_date:
+                        type: string
+                        format: date
+                        example: "2025-03-31"
+                  total_trips:
+                    type: integer
+                    description: Total trips in the period across all zones
+                    example: 34521890
+                  zones:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        rank:
+                          type: integer
+                          example: 1
+                        zone_id:
+                          type: integer
+                          example: 161
+                        zone_name:
+                          type: string
+                          example: "Midtown Center"
+                        borough:
+                          type: string
+                          example: "Manhattan"
+                        trip_count:
+                          type: integer
+                          example: 1823400
+                        market_share_pct:
+                          type: number
+                          format: float
+                          description: Percentage of total trips originating from this zone
+                          example: 5.28
+        "400":
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  # UC05 — Top zonas de dropoff com percentagem por destino
+  /locations/{zone_id}/dropoffs:
+    get:
+      summary: Top dropoff zones from a specific pickup zone
+      description: >
+        Returns the most frequent dropoff zones for trips originating from a
+        given pickup zone. Each destination includes its trip count and its
+        percentage relative to all trips departing from the origin zone.
+      operationId: getTopDropoffs
+      parameters:
+        - name: zone_id
+          in: path
+          required: true
+          description: Numeric identifier of the pickup zone
+          schema:
+            type: integer
+            example: 161
+        - name: limit
+          in: query
+          required: false
+          description: Maximum number of dropoff zones to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+        - name: start_date
+          in: query
+          required: false
+          description: Start of the period (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+            example: "2025-01-01"
+        - name: end_date
+          in: query
+          required: false
+          description: End of the period (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+            example: "2025-03-31"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  origin_zone:
+                    type: object
+                    properties:
+                      zone_id:
+                        type: integer
+                        example: 161
+                      zone_name:
+                        type: string
+                        example: "Midtown Center"
+                      borough:
+                        type: string
+                        example: "Manhattan"
+                      total_trips_from_zone:
+                        type: integer
+                        description: Total trips departing from this zone in the period
+                        example: 1823400
+                  dropoffs:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        rank:
+                          type: integer
+                          example: 1
+                        zone_id:
+                          type: integer
+                          example: 237
+                        zone_name:
+                          type: string
+                          example: "Upper East Side South"
+                        borough:
+                          type: string
+                          example: "Manhattan"
+                        trip_count:
+                          type: integer
+                          example: 142300
+                        destination_share_pct:
+                          type: number
+                          format: float
+                          description: Percentage of trips from origin zone that go to this destination
+                          example: 7.81
+        "404":
+          description: Zone not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "400":
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  # UC06 — Pares origem-destino com índice de afinidade
+  /locations/pairs:
+    get:
+      summary: Origin-destination pairs with affinity index
+      description: >
+        Returns the most significant origin-destination zone pairs ranked by
+        their affinity index. The affinity index normalizes trip volume by the
+        total outbound trips from the origin and total inbound trips to the
+        destination, revealing pairs with a genuinely strong relationship
+        beyond what their individual volumes would suggest.
+        Formula: affinity(A→B) = trips(A→B) / (total_from_A × total_to_B).
+        Exemplo: total_from_A = 600 saídas de A | total_to_B   = 300 chegadas a B |
+        total_from_A × total_to_B = 600 × 300 = 180.000, ou seja, são esperadas 180 viagens entre A e B. Valores superiores a 180 têm um affinity index maior que 1, e vice versa. Se index = 1, valor esperado = valor real
+      operationId: getODPairs
+      parameters:
+        - name: start_date
+          in: query
+          required: false
+          description: Start of the period (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+            example: "2025-01-01"
+        - name: end_date
+          in: query
+          required: false
+          description: End of the period (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+            example: "2025-03-31"
+        - name: limit
+          in: query
+          required: false
+          description: Maximum number of OD pairs to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: min_trips
+          in: query
+          required: false
+          description: >
+            Minimum number of trips for a pair to be included.
+            Filters out pairs with insufficient volume for statistical relevance.
+          schema:
+            type: integer
+            minimum: 1
+            default: 100
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  period:
+                    type: object
+                    properties:
+                      start_date:
+                        type: string
+                        format: date
+                        example: "2025-01-01"
+                      end_date:
+                        type: string
+                        format: date
+                        example: "2025-03-31"
+                  total_trips:
+                    type: integer
+                    description: Total trips in the period across all pairs
+                    example: 34521890
+                  pairs:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        rank:
+                          type: integer
+                          example: 1
+                        origin_zone_id:
+                          type: integer
+                          example: 161
+                        origin_zone_name:
+                          type: string
+                          example: "Midtown Center"
+                        origin_borough:
+                          type: string
+                          example: "Manhattan"
+                        destination_zone_id:
+                          type: integer
+                          example: 132
+                        destination_zone_name:
+                          type: string
+                          example: "JFK Airport"
+                        destination_borough:
+                          type: string
+                          example: "Queens"
+                        trip_count:
+                          type: integer
+                          example: 48200
+                        affinity_index:
+                          type: number
+                          format: float
+                          description: >
+                            Normalized affinity score. Higher values indicate a
+                            disproportionately strong relationship between zones,
+                            beyond what individual trip volumes would suggest.
+                          example: 4.82
+                        relative_frequency_pct:
+                          type: number
+                          format: float
+                          description: Percentage of all city trips represented by this pair
+                          example: 3.42
+        "400":
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  # UC07 — Perfil completo de zona com score de atratividade
+
+  /locations/{zone_id}/profile:
+    get:
+      summary: Full zone profile with attractiveness score
+      description: >
+        Returns a comprehensive profile of a zone, aggregating trip volume,
+        financial metrics and demand patterns. Demand patterns are fetched
+        from the Demand Service. An attractiveness score (0-100) is computed
+        by combining normalized trip volume (40%), average tip (35%) and
+        peak demand intensity (25%). A higher score indicates a zone that is
+        more attractive for a driver — high volume, generous passengers and
+        predictable demand peaks.
+      operationId: getZoneProfile
+      parameters:
+        - name: zone_id
+          in: path
+          required: true
+          description: Numeric identifier of the zone
+          schema:
+            type: integer
+            example: 161
+        - name: start_date
+          in: query
+          required: false
+          description: Start of the period (YYYY-MM-DD). If omitted, uses the full dataset.
+          schema:
+            type: string
+            format: date
+            example: "2015-01-01"
+        - name: end_date
+          in: query
+          required: false
+          description: End of the period (YYYY-MM-DD). If omitted, uses the full dataset.
+          schema:
+            type: string
+            format: date
+            example: "2015-12-31"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  zone_id:
+                    type: integer
+                    example: 161
+                  zone_name:
+                    type: string
+                    example: "Midtown Center"
+                  borough:
+                    type: string
+                    example: "Manhattan"
+                  trip_volume:
+                    type: object
+                    properties:
+                      total_trips:
+                        type: integer
+                        example: 1823400
+                      market_share_pct:
+                        type: number
+                        format: float
+                        description: Percentage of total city trips originating from this zone
+                        example: 5.28
+                  financials:
+                    type: object
+                    properties:
+                      avg_fare:
+                        type: number
+                        format: float
+                        description: Average fare amount in USD
+                        example: 14.20
+                      avg_tip:
+                        type: number
+                        format: float
+                        description: Average tip amount in USD
+                        example: 2.85
+                      avg_tip_pct:
+                        type: number
+                        format: float
+                        description: Average tip as percentage of fare
+                        example: 20.1
+                  demand_patterns:
+                    type: object
+                    description: Fetched from Demand Service
+                    properties:
+                      peak_hour:
+                        type: integer
+                        description: Hour of day with highest demand (0-23)
+                        example: 18
+                      peak_day:
+                        type: string
+                        description: Day of week with highest demand
+                        example: "Friday"
+                      volatility_index:
+                        type: number
+                        format: float
+                        description: >
+                          Normalized coefficient of variation of hourly trip counts,
+                          fetched from the Demand Service. 1.0 = city average.
+                          Above 1.0 = more volatile than average.
+                          Below 1.0 = more stable than average.
+                        example: 1.12
+                      volatility_classification:
+                        type: string
+                        enum: [low, medium, high]
+                        example: "low"
+                  attractiveness_score:
+                    type: number
+                    format: float
+                    description: >
+                      Composite score (0-100) combining trip volume (40%),
+                      average tip (35%) and peak demand intensity (25%).
+                      Higher scores indicate zones more attractive for drivers.
+                    example: 78.4
+                  attractiveness_classification:
+                    type: string
+                    enum: [low, medium, high]
+                    example: "high"
+        "404":
+          description: Zone not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+components:
+  schemas:
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 400
+        message:
+          type: string
+          example: "Invalid date range: end_date must be after start_date"

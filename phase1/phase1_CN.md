@@ -25,14 +25,17 @@ Os clientes utilizam os padrões históricos fornecidos como baseline para os se
 - UC03 — Velocidade média das viagens por zona e período do dia (km/h), com classificação automática em slow, normal ou fast com base em thresholds históricos
 - UC18 — Coeficiente entre duração e gorjeta (Ver se viagens longas têm mais gorjeta)
 - UC20 — Deteção de viagens com valores suspeitos (Uma viagem de 2km a custar 50$, por exemplo.)
+- UC21 — Remoção de viagens com dados inválidos/suspeito
+- UC22 — Submissão de uma nova viagem para análise
 
 ### Diogo Sousa — Location Service
 
-- UC04 — Ranking de zonas com quota de mercado
+- UC04 — Ranking de zonas com quota de mercado (Pickup)
 - UC05 — Top zonas de dropoff com percentagem por destino
 - UC06 — Pares origem-destino com índice de afinidade entre zonas
 - UC07 — Perfil completo de zona com score de atratividade
 - UC19 — Comparação de padrões de mobilidade entre zonas ricas e zonas periféricas
+- UC23 - Atualização de uma viagem já existente.
 
 ### Francisco Lopes — Revenue Service
 
