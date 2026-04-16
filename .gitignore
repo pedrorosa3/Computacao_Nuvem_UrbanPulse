@@ -1,25 +1,21 @@
-# ── Bases de dados (volumes Docker) ─────────────────────────────────────────
-phase 4 - Implementation/trip-service/db-data/
-phase 4 - Implementation/location-service/db-data/
-phase 4 - Implementation/analytics-service/db-data/
 
-# ── Datasets (ficheiros grandes) ─────────────────────────────────────────────
-phase 4 - Implementation/trip-service/data/
-phase 4 - Implementation/location-service/data/
-phase 4 - Implementation/analytics-service/data/
-TaxiZonesScript/yellow_tripdata_2015-01.csv
-TaxiZonesScript/yellow_tripdata_2015-01_clean.csv
+data/
 
-# ── Python ────────────────────────────────────────────────────────────────────
+db-data/
+
 __pycache__/
-*.pyc
+*.py[cod]
 *.pyo
-*.pyd
 .env
+venv/
+.venv/
 
-# ── Shapefiles (ficheiros grandes geoespaciais) ───────────────────────────────
-TaxiZonesScript/*.shp
-TaxiZonesScript/*.dbf
-TaxiZonesScript/*.shx
-TaxiZonesScript/*.prj
-TaxiZonesScript/*.cpg
+.vscode/
+.idea/
+
+.DS_Store
+Thumbs.db
+
+*.env
+secrets.yaml
+TaxiZonesScript/yellow_tripdata_2015-01.csv

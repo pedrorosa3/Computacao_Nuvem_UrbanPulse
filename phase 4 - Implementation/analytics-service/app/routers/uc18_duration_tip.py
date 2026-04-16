@@ -16,6 +16,7 @@ PAYMENT_SERVICE_URL = os.getenv("PAYMENT_SERVICE_URL", "payment-api:50052")
 
 # Busca um sample de trip_ids para analisar (sem filtro por data no Trip Service gRPC,
 # usamos os IDs directamente — em produção o proto poderia ter filtro de data)
+
 SAMPLE_SIZE = 500
 
 
@@ -62,8 +63,8 @@ def duration_tip_correlation(
     except grpc.RpcError as e:
         raise HTTPException(status_code=503, detail=f"Payment Service indisponível: {e.details()}")
 
-    # 4. Cruzar dados — só viagens com cartão (tip registado)
-    payments_map = dict(payment_resp.payments)  # {trip_id: TripPaymentInfo}
+    # 4. Cruzar dados — só viagens com cartão
+    payments_map = dict(payment_resp.payments) 
 
     matched = []
     for trip in duration_resp.trips:
