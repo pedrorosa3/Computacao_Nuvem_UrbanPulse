@@ -1,101 +1,126 @@
-# Payment Service - Instruções de Deployment (GCP)
+# Instruções para correr os meus microservices no GKE do GCP.
 
-## Arquitetura e Armazenamento (Cloud Native)
+## Arquitetura de armazenamento
 
-Ao contrário de uma abordagem de "Lift & Shift" com volumes persistentes, o **Payment Service** foi migrado para uma arquitetura 100% gerida e *Cloud Native*. 
+A base de dados do Location Service corre num pod PostgreSQL no GKE com os dados persistidos num **Google Persistent Disk** através de um **PersistentVolumeClaim (PVC)** de 10GB. Esta configuração é definida no location-db-pvc.yaml
 
-O serviço consome os dados diretamente do **Google BigQuery**, o Data Warehouse da Google.
-* **Vantagens:** Não requer a criação de PersistentVolumeClaims (PVCs), não precisa de bases de dados locais a correr no cluster (PostgreSQL) e não exige a injeção manual de dados via ficheiros `.csv` ou scripts de `seed.py`.
-* **Padrão Utilizado:** Seguindo as boas práticas de microserviços sugeridas (Phase 6), utilizámos o padrão *Database per Service*.
+Os ficheiros internos do PostgreSQL estão em `/var/lib/postgresql/data/pgdata` dentro do volume — garantindo que os dados sobrevivem ao reinício dos pods.
 
-## Como Fazer o Deployment no GKE
+## Preparar os ficheiros no Cloud Shell
 
-Como o serviço não tem dependências de armazenamento local, o deployment é direto e não requer upload prévio de ficheiros para o Cloud Shell.
+No Cloud Shell, clicar nos **3 pontos (⋮)** → **Upload** e fazer upload das pastas:
 
-### 1 - Criar o cluster
-Ação que pode demorar 3-5 minutos:
-```bash
-gcloud container clusters create-auto urbanpulse-cluster --region europe-west4
-```
+- `location-service/` (sem as pastas `db-data/` e `data/`)
+- `analytics-service/`
 
-### 2 - Ligar kubectl ao cluster
+Depois mover para a pasta correta:
 
-```bash
-gcloud container clusters get-credentials urbanpulse-cluster --region europe-west4
-```
+mkdir -p ~/uploadGCP
+mv location-service ~/uploadGCP/
+mv analytics-service ~/uploadGCP/
 
-### 3 - O Namespace
-Garantir que o namespace partilhado da equipa está criado:
+### Ficheiros Kubernetes
 
-```bash
+Fazer upload da pasta `kubernetesCloud/` pelo mesmo método
+
+### CSV do dataset
+
+Fazer upload do ficheiro `yellow_tripdata_2015-01_clean.csv` e do `taxi_zone_lookup.csv`:
+
+mkdir -p ~/uploadGCP/location-service/data
+mv yellow_tripdata_2015-01_clean.csv ~/uploadGCP/location-service/data/
+mv taxi_zone_lookup.csv ~/uploadGCP/location-service/data/
+
+Nota: O upload só é necessário na primeira vez. O Cloud Shell guarda os ficheiros que fizerem upload.
+
+## 1 - Criar o cluster
+
+gcloud container clusters create urbanpulse \
+ --zone=europe-west1-b \
+ --num-nodes=2 \
+ --machine-type=e2-small \
+ --disk-size=20 \
+ --no-enable-autoupgrade
+
+Demora mais ou menos 5 minutos.
+
+## 2 -Criar o namespace
+
 kubectl create namespace urbanpulse
-```
 
-### 4 - Autenticação no Docker Hub (Obrigatório)
+## 3 - Criar os ConfigMaps (init.sql de cada DB)
 
-Como a imagem do Payment Service está num repositório privado para garantir a segurança das credenciais GCP (Google Cloud), é necessário criar o Secret de leitura no cluster antes de aplicar os manifestos:
+kubectl create configmap location-db-init \
+ --from-file=init.sql=/home/diogocsousa27/uploadGCP/location-service/db/init.sql \
+ -n urbanpulse
 
-```bash
-kubectl create secret docker-registry dockerhub-secret \
-  --docker-server=https://index.docker.io/v1/ \
-  --docker-username=pedrorosa3 \
-  --docker-password=***REMOVED*** \
-  --docker-email=pedromjrosa333@gmail.com \
-  -n urbanpulse
-```
+## 4 - Aplicar os yamls
 
-### 5 - Aplicar os YAMLs
-Aplicar o manifesto do Payment Service (que já inclui o Deployment, o Service, o HPA e o Ingress):
+kubectl apply -f ~/kubernetesCloud/location-service/
+kubectl apply -f ~/kubernetesCloud/analytics-service/
 
-```bash
-kubectl apply -f payment-k8s.yaml
-```
+## 5 - Verificar os pods
 
-### 6 - Verificar os pods
-Esperar que o pod inicie e passe para o estado Running, ação que pode demorar entre 2-4 minutos:
+Esperar 1 minuto antes de executar o comando, para dar tempo aos pods de iniciarem.
 
-```bash
 kubectl get pods -n urbanpulse
-```
-ou para ver em tempo real:
 
-```bash
-kubectl get pods -n urbanpulse -w
-```
-Quando quiseres sair deste visualizador em tempo real faz CTRL+C
+# todos devem estar: 1/1 Running
 
+## 6. Popular a base de dados (seed)
 
-### 7 - Descobrir o ingress
+# Expor a DB
 
-```bash
-kubectl get ingress -n urbanpulse
-```
+kubectl port-forward svc/location-db 5437:5432 -n urbanpulse &
 
+# Correr o seed
 
+cd ~/uploadGCP/location-service
+pip3 install pandas
+python3 seed.py
 
-Para correr e testar:
+## 7. Verificar o HPA
 
-Coloca no browser:
+kubectl get hpa -n urbanpulse
 
-http://IP-dado-pelo-ingress
+## 8. Testar os endpoints
 
-http://IP-dado-pelo-ingress/docs
+# Expor os serviços
 
+kubectl port-forward svc/location-api 8000:8000 -n urbanpulse &
+kubectl port-forward svc/analytics-api 8003:8003 -n urbanpulse &
 
-Para ver os logs:
+Usar o Web Preview no Cloud Shell (ícone no topo) para testar:
 
-```bash
-kubectl logs -l app=payment-service -n urbanpulse -f
-```
+/health
+/locations/pickup/ranking
+/locations/161/profile
+/analytics/mobility-comparison
 
-Para apagar o cluster, fazendo com que o GCP não cobre créditos por consumo:
+É necessário trocar a porta consoante o microserviço que estamos a verificar.
 
-```bash
-gcloud container clusters delete urbanpulse-cluster --region europe-west4 --quiet
-```
+## 9. Testar rollback
 
+# Ver histórico de versões
 
+kubectl rollout history deployment/location-api -n urbanpulse
 
+# Fazer rollback
 
+kubectl rollout undo deployment/location-api -n urbanpulse
 
-Acesso Seguro à Imagem DockerPara evitar conflitos de permissões entre contas GCP individuais da equipa (Artifact Registry), a imagem do Payment Service está alojada de forma segura no Docker Hub.O ficheiro payment-k8s.yaml já está configurado para puxar a imagem pública pedrorosa3/payment-service:v5.Portas e ProtocolosNesta iteração da arquitetura, o serviço de pagamentos comunica exclusivamente via REST HTTP, não expondo endpoints gRPC.
+## Como parar para não gastar créditos
+
+gcloud container clusters delete urbanpulse --zone=europe-west1-b
+
+## Portas
+
+| Serviço       | REST | gRPC  | BD   |
+| ------------- | ---- | ----- | ---- |
+| Location API  | 8000 | 50054 | 5437 |
+| Analytics API | 8003 | —     | —    |
+
+## Imagens no Artifact Registry
+
+europe-west1-docker.pkg.dev/fc60250/urbanpulse/location-api:latest
+europe-west1-docker.pkg.dev/fc60250/urbanpulse/analytics-api:latest
