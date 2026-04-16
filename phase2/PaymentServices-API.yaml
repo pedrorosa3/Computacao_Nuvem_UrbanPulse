@@ -1,0 +1,315 @@
+openapi: 3.0.3
+info:
+  title: UrbanPulse - Payment Service API
+  description: |
+    API responsável pela análise de pagamentos, gorjetas e flutuações de procura do sistema UrbanPulse.
+    Desenvolvido por Pedro Rosa (Fase 2).
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080/api/v1
+    description: UrbanPulse - Payment Services
+tags:
+  - name: Tips
+    description: Análise de gorjetas (UC11, UC14)
+  - name: Payments
+    description: Distribuição e métodos de pagamento (UC12)
+  - name: Zones
+    description: Análise de zonas e procura (UC13, UC17)
+
+paths:
+  /payments/tips/comparison:
+    get:
+      tags:
+        - Tips
+      summary: UC11 — Comparação de gorjetas (Cartão vs Dinheiro)
+      description: Retorna uma comparação estatística das gorjetas dadas em viagens pagas com cartão versus pagas em dinheiro, com base em padrões históricos.
+      parameters:
+        - $ref: '#/components/parameters/StartDateParam'
+        - $ref: '#/components/parameters/EndDateParam'
+        - name: zone_id
+          in: query
+          description: ID da zona de pickup (opcional, para análise localizada).
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: Sucesso. Retorna as estatísticas comparativas.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TipComparisonResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /payments/distribution:
+    get:
+      tags:
+        - Payments
+      summary: UC12 — Distribuição de métodos de pagamento
+      description: Retorna a distribuição percentual dos métodos de pagamento utilizados e sinaliza zonas com comportamento de pagamento atípico.
+      parameters:
+        - $ref: '#/components/parameters/StartDateParam'
+        - $ref: '#/components/parameters/EndDateParam'
+      responses:
+        '200':
+          description: Sucesso. Retorna a distribuição e zonas atípicas.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentDistributionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /payments/zones/tipping-score:
+    get:
+      tags:
+        - Zones
+      summary: UC13 — Ranking de zonas por Tipping Score
+      description: Devolve uma lista de zonas ordenadas pelo seu "tipping score" (propensão histórica dos passageiros para dar boas gorjetas).
+      parameters:
+        - name: limit
+          in: query
+          description: Número máximo de zonas a retornar no ranking (Top N).
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+      responses:
+        '200':
+          description: Sucesso. Retorna o ranking das zonas.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ZoneTippingScore'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /payments/tips/passenger-correlation:
+    get:
+      tags:
+        - Tips
+      summary: UC14 — Correlação entre passageiros e gorjeta
+      description: |
+        Analisa a correlação entre o número de passageiros de uma viagem e o valor da gorjeta.
+        **Nota Arquitetural:** Este endpoint requer comunicação inter-serviços com o Trip Service.
+      parameters:
+        - $ref: '#/components/parameters/StartDateParam'
+        - $ref: '#/components/parameters/EndDateParam'
+      responses:
+        '200':
+          description: Sucesso. Retorna o coeficiente de correlação e descrição.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PassengerTipCorrelation'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /payments/zones/{zone_id}/demand-instability:
+    get:
+      tags:
+        - Zones
+      summary: UC17 — Instabilidade de procura por zona
+      description: Avalia o nível de variação/instabilidade da procura de transporte urbano ao longo do dia para uma zona específica, identificando horas de pico anómalas.
+      parameters:
+        - name: zone_id
+          in: path
+          description: ID único da zona a analisar.
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: Sucesso. Retorna a métrica de instabilidade para a zona.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DemandInstabilityResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  parameters:
+    StartDateParam:
+      name: start_date
+      in: query
+      description: Data de início do período a analisar (formato ISO 8601 YYYY-MM-DD).
+      schema:
+        type: string
+        format: date
+        example: "2023-01-01"
+    EndDateParam:
+      name: end_date
+      in: query
+      description: Data de fim do período a analisar (formato ISO 8601 YYYY-MM-DD).
+      schema:
+        type: string
+        format: date
+        example: "2023-01-31"
+
+  responses:
+    BadRequest:
+      description: O pedido contém parâmetros inválidos ou mal formatados.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: O recurso solicitado (ex. zona) não existe.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalServerError:
+      description: Erro interno do servidor (ex. falha na ligação à base de dados ou falha na comunicação com outro microserviço).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    ErrorResponse:
+      type: object
+      required:
+        - timestamp
+        - status
+        - error
+        - message
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          example: "2026-03-09T18:00:00Z"
+        status:
+          type: integer
+          example: 400
+        error:
+          type: string
+          example: "Bad Request"
+        message:
+          type: string
+          example: "O parâmetro 'start_date' deve estar no formato YYYY-MM-DD."
+        path:
+          type: string
+          example: "/api/v1/payments/tips/comparison"
+
+    TipComparisonResponse:
+      type: object
+      properties:
+        card_average_tip_percentage:
+          type: number
+          format: float
+          description: Média de gorjeta em percentagem para pagamentos com cartão.
+          example: 18.5
+        cash_average_tip_percentage:
+          type: number
+          format: float
+          description: Média de gorjeta em percentagem para pagamentos em dinheiro.
+          example: 10.2
+        difference_points:
+          type: number
+          format: float
+          description: Diferença percentual bruta.
+          example: 8.3
+          
+    PaymentDistributionResponse:
+      type: object
+      properties:
+        distribution:
+          type: object
+          properties:
+            credit_card:
+              type: number
+              format: float
+              example: 70.5
+            cash:
+              type: number
+              format: float
+              example: 25.0
+            no_charge:
+              type: number
+              format: float
+              example: 2.5
+            dispute:
+              type: number
+              format: float
+              example: 2.0
+        atypical_zones:
+          type: array
+          items:
+            type: object
+            properties:
+              zone_id:
+                type: integer
+                example: 45
+              dominant_method:
+                type: string
+                example: "Cash"
+              deviation_percentage:
+                type: number
+                format: float
+                example: 45.0
+
+    ZoneTippingScore:
+      type: object
+      properties:
+        zone_id:
+          type: integer
+          example: 161
+        zone_name:
+          type: string
+          example: "Midtown Center"
+        score:
+          type: number
+          format: float
+          description: Índice normalizado de propensão a dar gorjetas (0 a 100).
+          example: 85.4
+
+    PassengerTipCorrelation:
+      type: object
+      properties:
+        correlation_coefficient:
+          type: number
+          format: float
+          description: Coeficiente de correlação de Pearson (varia de -1 a 1).
+          example: 0.15
+        description:
+          type: string
+          example: "Correlação fraca positiva. O aumento de passageiros tem baixo impacto na gorjeta total."
+
+    DemandInstabilityResponse:
+      type: object
+      properties:
+        zone_id:
+          type: integer
+          example: 230
+        variance_index:
+          type: number
+          format: float
+          description: Variância normalizada da procura ao longo de 24 horas.
+          example: 0.89
+        peak_hours:
+          type: array
+          description: Horas do dia em que se registam picos atípicos.
+          items:
+            type: integer
+          example: [8, 9, 18, 23]
+        classification:
+          type: string
+          enum: [Stable, Moderate, Highly Unstable]
+          example: "Highly Unstable"
