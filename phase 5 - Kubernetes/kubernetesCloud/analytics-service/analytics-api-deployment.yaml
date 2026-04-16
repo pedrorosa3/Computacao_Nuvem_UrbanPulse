@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: analytics-api
+  namespace: urbanpulse
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: analytics-api
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: analytics-api
+    spec:
+      containers:
+        - name: analytics-api
+          image: europe-west1-docker.pkg.dev/fc60250/urbanpulse/analytics-api:latest
+          imagePullPolicy: Always
+          env:
+            - name: LOCATION_SERVICE_URL
+              value: "location-api:50054"
+            - name: DEMAND_SERVICE_URL
+              value: "demand-service:50053"
+            - name: PAYMENT_SERVICE_URL
+              value: "payment-api:50052"
+            - name: REVENUE_SERVICE_URL
+              value: "revenue-service:50055"
+          ports:
+            - containerPort: 8003
+              name: rest
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8003
+            initialDelaySeconds: 15
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8003
+            initialDelaySeconds: 5
+            periodSeconds: 10

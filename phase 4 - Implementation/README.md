@@ -72,6 +72,13 @@ http://localhost:8001/trips/speed/zones
 
 ### Revenue Service
 
+http://localhost:8007/health
+http://localhost:8007/revenue/avg-fare-by-zone
+http://localhost:8007/revenue/breakdown
+http://localhost:8007/revenue/breakdown?zone_id=161&year=2015
+http://localhost:8007/revenue/fare-per-km
+http://localhost:8007/revenue/fare-per-km?sort=asc&limit=5
+
 ### Analytics Service
 
 http://localhost:8003/health
