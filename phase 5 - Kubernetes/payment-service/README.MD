@@ -1,50 +1,101 @@
-Para correr, ir até à loc da pasta no PowerShell, e correr: docker-compose up --build
+# Payment Service - Instruções de Deployment (GCP)
 
-Para o container da DB, estou a usar uma image oficial do Postgre.
+## Arquitetura e Armazenamento (Cloud Native)
 
-As tabelas são criadas automaticamente através do init.sql quando o container arranca.
+Ao contrário de uma abordagem de "Lift & Shift" com volumes persistentes, o **Payment Service** foi migrado para uma arquitetura 100% gerida e *Cloud Native*. 
 
-O ficheiro do dataset está dentro da pasta data. Para o payment-db conter os dados necessários, temos que correr o seed.py.
+O serviço consome os dados diretamente do **Google BigQuery**, o Data Warehouse da Google.
+* **Vantagens:** Não requer a criação de PersistentVolumeClaims (PVCs), não precisa de bases de dados locais a correr no cluster (PostgreSQL) e não exige a injeção manual de dados via ficheiros `.csv` ou scripts de `seed.py`.
+* **Padrão Utilizado:** Seguindo as boas práticas de microserviços sugeridas (Phase 6), utilizámos o padrão *Database per Service*.
 
-O seed.py só pode ser corrido depois do container estar ligado. É um script que envia dados do meu pc para o container, via porta 5435.
+## Como Fazer o Deployment no GKE
 
-O seed.py está limitado a 10000 viagens, só para testes. Depois desbloquear.
+Como o serviço não tem dependências de armazenamento local, o deployment é direto e não requer upload prévio de ficheiros para o Cloud Shell.
 
-Depois de correr o seed.py, a payment-db está pronta para ser utilizada pelo payment service.
+### 1 - Criar o cluster
+Ação que pode demorar 3-5 minutos:
+```bash
+gcloud container clusters create-auto urbanpulse-cluster --region europe-west4
+```
 
-# Relativamente ao container payment-api:
+### 2 - Ligar kubectl ao cluster
 
-A image que utiliza é a definida no Dockerfile. Copia toda a pasta /app para dentro do container, instala todas as dependências necessárias, e fica preparado para receber pedidos.
+```bash
+gcloud container clusters get-credentials urbanpulse-cluster --region europe-west4
+```
 
-O main.py utiliza o FastAPI para iniciar a API propriamente dita.
+### 3 - O Namespace
+Garantir que o namespace partilhado da equipa está criado:
 
-O database.py é o script responsável por fazer a ligação entre o container payment-api e o container payment-db. Este último apenas pode ser acedido através do payment-api.
+```bash
+kubectl create namespace urbanpulse
+```
 
-Os routers é onde está a lógica da aplicação propriamente dita (UC11, UC12, UC13, UC14).
+### 4 - Autenticação no Docker Hub (Obrigatório)
 
-# Como correr:
+Como a imagem do Payment Service está num repositório privado para garantir a segurança das credenciais GCP (Google Cloud), é necessário criar o Secret de leitura no cluster antes de aplicar os manifestos:
 
-Criar a pasta data no diretório payment-service. Dentro dessa pasta data, colocar o ficheiro:
+```bash
+kubectl create secret docker-registry dockerhub-secret \
+  --docker-server=https://index.docker.io/v1/ \
+  --docker-username=pedrorosa3 \
+  --docker-password=***REMOVED*** \
+  --docker-email=pedromjrosa333@gmail.com \
+  -n urbanpulse
+```
 
-yellow_tripdata_2015-01_clean.csv
+### 5 - Aplicar os YAMLs
+Aplicar o manifesto do Payment Service (que já inclui o Deployment, o Service, o HPA e o Ingress):
 
-# Comandos para correr no PowerShell:
+```bash
+kubectl apply -f payment-k8s.yaml
+```
 
-cd "C:\...\Cloud-Computing\phase4\payment-service"
+### 6 - Verificar os pods
+Esperar que o pod inicie e passe para o estado Running, ação que pode demorar entre 2-4 minutos:
 
-docker-compose up --build
+```bash
+kubectl get pods -n urbanpulse
+```
+ou para ver em tempo real:
 
-python seed.py - Noutro terminal. Este script é para colocar dados na DB. Antes de o correr, a DB está vazia.
+```bash
+kubectl get pods -n urbanpulse -w
+```
+Quando quiseres sair deste visualizador em tempo real faz CTRL+C
 
-#Endpoints todos:
 
-http://localhost:8006/docs
+### 7 - Descobrir o ingress
+
+```bash
+kubectl get ingress -n urbanpulse
+```
 
 
-# Alguns endpoints para testar:
 
-http://localhost:8006/api/v1/payments/tips/comparison
+Para correr e testar:
 
-http://localhost:8006/api/v1/payments/distribution
+Coloca no browser:
 
-http://localhost:8006/api/v1/payments/zones/tipping-score?limit=5
+http://IP-dado-pelo-ingress
+
+http://IP-dado-pelo-ingress/docs
+
+
+Para ver os logs:
+
+```bash
+kubectl logs -l app=payment-service -n urbanpulse -f
+```
+
+Para apagar o cluster, fazendo com que o GCP não cobre créditos por consumo:
+
+```bash
+gcloud container clusters delete urbanpulse-cluster --region europe-west4 --quiet
+```
+
+
+
+
+
+Acesso Seguro à Imagem DockerPara evitar conflitos de permissões entre contas GCP individuais da equipa (Artifact Registry), a imagem do Payment Service está alojada de forma segura no Docker Hub.O ficheiro payment-k8s.yaml já está configurado para puxar a imagem pública pedrorosa3/payment-service:v5.Portas e ProtocolosNesta iteração da arquitetura, o serviço de pagamentos comunica exclusivamente via REST HTTP, não expondo endpoints gRPC.
