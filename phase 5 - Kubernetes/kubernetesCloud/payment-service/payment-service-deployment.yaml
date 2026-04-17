@@ -13,15 +13,28 @@ spec:
       labels:
         app: payment-service
     spec:
-      imagePullSecrets:             # <-- Mantém a segurança do teu repositório privado
-      - name: dockerhub-secret
       containers:
       - name: payment-service
-        image: pedrorosa3/payment-service:v5 
+        # A TUA NOVA IMAGEM NO ARTIFACT REGISTRY:
+        image: europe-west1-docker.pkg.dev/computacaonuvem60294/urbanpulse/payment-service:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 8006
         
-        # GESTÃO DE RECURSOS (Exigência da Fase 5)
+        # AS VARIÁVEIS DA TUA NOVA BASE DE DADOS POSTGRES:
+        env:
+          - name: DB_HOST
+            value: "payment-db"
+          - name: DB_PORT
+            value: "5435"
+          - name: DB_NAME
+            value: "payment_db"
+          - name: DB_USER
+            value: "admin"
+          - name: DB_PASSWORD
+            value: "password"
+            
+        # GESTÃO DE RECURSOS
         resources:
           requests:
             cpu: "100m"
@@ -30,7 +43,7 @@ spec:
             cpu: "250m"
             memory: "256Mi"
             
-        # LIVENESS PROBE (Para o K8s saber se a API encravou)
+        # LIVENESS PROBE
         livenessProbe:
           httpGet:
             path: /docs
