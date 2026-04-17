@@ -10,7 +10,7 @@
 ## 1. Ir para a pasta do projeto
 
 ```bash
-cd "C:\Users\<O_TEU_USER>\...\phase 5 - Kubernetes"
+cd "C:\Users\Francisco\Desktop\Cloud-Computing\phase 4 - Implementation"
 ```
 
 ---
@@ -56,12 +56,12 @@ docker build -t revenue-api:latest ./revenue-service
 
 ### Demand Service
 ```bash
-kubectl apply -f ./kubernetes/demand-service/
+kubectl apply -f "../phase 5 - Kubernetes/kubernetes/demand-service/"
 ```
 
 ### Revenue Service
 ```bash
-kubectl apply -f ./kubernetes/revenue-service/
+kubectl apply -f "../phase 5 - Kubernetes/kubernetes/revenue-service/"
 ```
 
 ---
