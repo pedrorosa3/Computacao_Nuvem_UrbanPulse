@@ -120,10 +120,14 @@ gcloud container clusters delete urbanpulse --zone=europe-west1-b
 
 ## Portas
 
-| Serviço       | REST | gRPC  | BD   |
-| ------------- | ---- | ----- | ---- |
-| Location API  | 8000 | 50054 | 5437 |
-| Analytics API | 8003 | —     | —    |
+| Serviço           | REST | gRPC  | BD   |
+| ----------------- | ---- | ----- | ---- |
+| Location Service  | 8000 | 50054 | 5437 |
+| Demand Service    | 8002 | 50053 | 5434 |
+| Payment Service   | 8006 | 50052 | 5435 |
+| Trip Service      | 8001 | 50051 | 5436 |
+| Analytics Service | 8003 | —     | —    |
+| Revenue Service   | 8007 | 50055 | 5433 |
 
 ## Imagens no Artifact Registry
 
