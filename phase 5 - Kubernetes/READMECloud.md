@@ -25,6 +25,19 @@ E dos ficheiros CSV:
 
 > Nota: O upload só é necessário na primeira vez. O Cloud Shell guarda os ficheiros entre sessões.
 
+
+## Alertas importantes
+
+Senão estiverem pode ser por ainda não terem colocado os docker no Artifact Registry, ver READMEArtifactRegistry.md
+
+Após estiverem bem colocados no ArtifactRegistry faz o passo 4 outra vez para aplicar os kubernetes.
+
+Alterei os recursos para 50 e 64 e meti o meu nome do projeto em todos os nomedoserviço-deployment.yaml em vez do fc60250.
+
+verificar quando fazem o gcloud build o nome que metem ex: payment-service, depois no payment-service-deployment.yaml a linha deve estar assim:
+
+image: europe-west1-docker.pkg.dev/computacaonuvem60294/urbanpulse/payment-service:latest
+
 ## 1 - Criar o cluster
 
 ```bash
@@ -50,6 +63,8 @@ kubectl create namespace urbanpulse
 kubectl create configmap location-db-init \
   --from-file=init.sql=/home/diogocsousa27/MicroServices/location-service/db/init.sql \
   -n urbanpulse
+
+kubectl create configmap payment-db-init   --from-file=init.sql=/home/pedromjrosa333/MicroServices/payment-service/init.sql   -n urbanpulse
 ```
 
 ## 4 - Aplicar os yamls
@@ -57,6 +72,7 @@ kubectl create configmap location-db-init \
 ```bash
 kubectl apply -f ~/kubernetesCloud/location-service/
 kubectl apply -f ~/kubernetesCloud/analytics-service/
+kubectl apply -f ~/kubernetesCloud/payment-service/
 ```
 
 ## 5 - Verificar os pods
@@ -78,6 +94,11 @@ kubectl port-forward svc/location-db 5437:5432 -n urbanpulse &
 cd ~/MicroServices/location-service
 pip3 install pandas
 python3 seed.py
+
+kubectl port-forward deployment/payment-db 5435:5432 -n urbanpulse &
+cd ~/MicroServices/payment-service
+python3 seed.py
+
 ```
 
 ## 7 - Verificar o HPA
@@ -91,6 +112,7 @@ kubectl get hpa -n urbanpulse
 ```bash
 kubectl port-forward svc/location-api 8000:8000 -n urbanpulse &
 kubectl port-forward svc/analytics-api 8003:8003 -n urbanpulse &
+kubectl port-forward svc/payment-svc 8006:8006 -n urbanpulse &
 ```
 
 Usar o Web Preview no Cloud Shell (ícone no topo) para testar:
@@ -100,6 +122,10 @@ Usar o Web Preview no Cloud Shell (ícone no topo) para testar:
 - `/locations/161/profile`
 - `/analytics/mobility-comparison`
 
+Para testa o payment-service, meter no porto 8006 e usar o docs para ter acesso à interface interativa do swagger.
+
+ `/docs`
+
 > É necessário trocar a porta consoante o microserviço que estamos a verificar.
 
 ## 9 - Testar rollback
@@ -107,9 +133,11 @@ Usar o Web Preview no Cloud Shell (ícone no topo) para testar:
 ```bash
 # Ver histórico de versões
 kubectl rollout history deployment/location-api -n urbanpulse
+kubectl rollout history deployment/payment-svc -n urbanpulse
 
 # Fazer rollback
 kubectl rollout undo deployment/location-api -n urbanpulse
+kubectl rollout undo deployment/payment-svc -n urbanpulse
 ```
 
 ## Como parar para não gastar créditos
@@ -128,6 +156,7 @@ gcloud container clusters delete urbanpulse --zone=europe-west1-b
 | Trip Service      | 8001 | 50051 | 5436 |
 | Analytics Service | 8003 | —     | —    |
 | Revenue Service   | 8007 | 50055 | 5433 |
+
 
 ## Imagens no Artifact Registry
 
