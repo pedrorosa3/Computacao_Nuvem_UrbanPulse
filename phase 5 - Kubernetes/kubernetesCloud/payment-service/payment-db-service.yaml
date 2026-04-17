@@ -7,6 +7,6 @@ spec:
   selector:
     app: payment-db
   ports:
-    - port: 5435
-      targetPort: 5435
+    - port: 5432
+      targetPort: 5432
   type: ClusterIP

@@ -6,7 +6,7 @@ from sqlalchemy.orm import sessionmaker
 # Lê o URL da variável de ambiente definida no docker-compose
 SQLALCHEMY_DATABASE_URL = os.getenv(
     "DATABASE_URL", 
-    "postgresql://admin:password@localhost:5434/payment_db"
+    "postgresql://admin:password@localhost:5435/payment_db"
 )
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
