@@ -7,6 +7,13 @@ Aceder a https://console.cloud.google.com e clicar no ícone `>_` no canto super
 ---
 
 ## 2 — Build e push da imagem
+Criar repo para as imagens, caso nao esteja já criado
+```bash
+gcloud artifacts repositories create urbanpulse \
+  --repository-format=docker \
+  --location=europe-west1 \
+  --description="Repo de imagens"
+```
 
 ```bash
 cd ~/MicroServices/[nome-servico]
