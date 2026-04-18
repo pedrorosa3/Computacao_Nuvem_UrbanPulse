@@ -15,13 +15,15 @@ spec:
     spec:
       containers:
         - name: revenue-api
-          image: europe-west1-docker.pkg.dev/fc60252/urbanpulse/revenue-service:latest
+          image: europe-west1-docker.pkg.dev/fc60252/urbanpulse/revenue-api:latest
           imagePullPolicy: Always
           env:
             - name: DATABASE_URL
               value: postgresql://urbanpulse:urbanpulse@revenue-db:5432/revenue_db
             - name: TRIP_SERVICE_URL
               value: trip-api:50051
+            - name: LOCATION_SERVICE_URL
+              value: "location-api:50054"
           ports:
             - containerPort: 8007
               name: rest

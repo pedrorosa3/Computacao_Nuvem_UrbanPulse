@@ -8,11 +8,6 @@ spec:
   selector:
     matchLabels:
       app: demand-api
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxUnavailable: 0
-      maxSurge: 1
   template:
     metadata:
       labels:
@@ -20,11 +15,13 @@ spec:
     spec:
       containers:
         - name: demand-api
-          image: europe-west1-docker.pkg.dev/fc60252/urbanpulse/demand-service:latest
+          image: europe-west1-docker.pkg.dev/fc60252/urbanpulse/demand-api:latest
           imagePullPolicy: Always
           env:
             - name: DATABASE_URL
               value: postgresql://urbanpulse:urbanpulse@demand-db:5432/demand_db
+            - name: LOCATION_SERVICE_URL
+              value: "location-api:50054"
           ports:
             - containerPort: 8002
               name: rest
