@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-deploy
+  namespace: urbanpulse
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: payment-service
+  template:
+    metadata:
+      labels:
+        app: payment-service
+    spec:
+      containers:
+      - name: payment-service
+        # A TUA NOVA IMAGEM NO ARTIFACT REGISTRY:
+        image: europe-west1-docker.pkg.dev/computacaonuvem60294/urbanpulse/payment-service:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8006
+        
+        # AS VARIÁVEIS DA TUA NOVA BASE DE DADOS POSTGRES:
+        env:
+          - name: DB_HOST
+            value: "payment-db"
+          - name: DB_PORT
+            value: "5435"
+          - name: DB_NAME
+            value: "payment_db"
+          - name: DB_USER
+            value: "admin"
+          - name: DB_PASSWORD
+            value: "password"
+            
+        # GESTÃO DE RECURSOS
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "250m"
+            memory: "256Mi"
+            
+        # LIVENESS PROBE
+        livenessProbe:
+          httpGet:
+            path: /docs
+            port: 8006
+          initialDelaySeconds: 15
+          periodSeconds: 20
