@@ -22,9 +22,9 @@ Demora ~2-3 minutos. Quando terminar deves ver `STATUS: SUCCESS`.
 | Serviço         | Comando                                                                                              |
 | --------------- | ---------------------------------------------------------------------------------------------------- |
 | demand-service  | `gcloud builds submit --tag europe-west1-docker.pkg.dev/fc60250/urbanpulse/demand-api:latest .`  |
-| payment-service | `gcloud builds submit --tag europe-west1-docker.pkg.dev/fc60250/urbanpulse/payment-service:latest .` |
-| trip-service    | `gcloud builds submit --tag europe-west1-docker.pkg.dev/fc60250/urbanpulse/trip-service:latest .`    |
-| revenue-service | `gcloud builds submit --tag europe-west1-docker.pkg.dev/fc60250/urbanpulse/revenue-service:latest .` |
+| payment-service | `gcloud builds submit --tag europe-west1-docker.pkg.dev/fc60250/urbanpulse/payment-api:latest .` |
+| trip-service    | `gcloud builds submit --tag europe-west1-docker.pkg.dev/fc60250/urbanpulse/trip-api:latest .`    |
+| revenue-service | `gcloud builds submit --tag europe-west1-docker.pkg.dev/fc60250/urbanpulse/revenue-api:latest .` |
 
 ---
 
