@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demand-api
+  namespace: urbanpulse
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: demand-api
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: demand-api
+    spec:
+      containers:
+        - name: demand-api
+          image: europe-west1-docker.pkg.dev/fc60252/urbanpulse/demand-service:latest
+          imagePullPolicy: Always
+          env:
+            - name: DATABASE_URL
+              value: postgresql://urbanpulse:urbanpulse@demand-db:5432/demand_db
+          ports:
+            - containerPort: 8002
+              name: rest
+            - containerPort: 50053
+              name: grpc
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8002
+            initialDelaySeconds: 15
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8002
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
