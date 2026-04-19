@@ -34,7 +34,7 @@ spec:
             - name: DB_PASSWORD
               value: "isqueiro20"
             - name: DEMAND_SERVICE_URL
-              value: "demand-service:50053"
+              value: "demand-api:50053"
           ports:
             - containerPort: 8000
               name: rest

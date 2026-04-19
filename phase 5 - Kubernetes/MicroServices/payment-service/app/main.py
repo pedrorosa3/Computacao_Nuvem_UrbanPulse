@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from .routers import payments
-#from .grpc_server import serve_grpc
+from .grpc_server import serve_grpc
 
 grpc_server_instance = None
 
@@ -9,11 +9,11 @@ grpc_server_instance = None
 async def lifespan(app: FastAPI):
     # O que acontece ao LIGAR a API:
     global grpc_server_instance
-    #grpc_server_instance = serve_grpc()
+    grpc_server_instance = serve_grpc()
     print("🚀 Servidor gRPC do Payment Service a correr na porta 50052!")
     yield
     # O que acontece ao DESLIGAR a API:
-    #grpc_server_instance.stop(0)
+    grpc_server_instance.stop(0)
     print("🛑 Servidor gRPC desligado.")
 
 app = FastAPI(
