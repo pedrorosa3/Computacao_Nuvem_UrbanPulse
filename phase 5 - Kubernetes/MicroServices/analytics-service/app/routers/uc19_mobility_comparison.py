@@ -13,7 +13,7 @@ router = APIRouter()
 
 LOCATION_SERVICE_URL = os.getenv("LOCATION_SERVICE_URL", "location-api:50054")
 DEMAND_SERVICE_URL   = os.getenv("DEMAND_SERVICE_URL",   "demand-service:50053")
-PAYMENT_SERVICE_URL  = os.getenv("PAYMENT_SERVICE_URL",  "payment-api:50052")
+PAYMENT_SERVICE_URL  = os.getenv("PAYMENT_SERVICE_URL",  "payment-svc:50052")
 REVENUE_SERVICE_URL  = os.getenv("REVENUE_SERVICE_URL",  "revenue-service:50055")
 
 
