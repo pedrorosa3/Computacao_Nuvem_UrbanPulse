@@ -6,3 +6,5 @@ grpcio-tools==1.78.0
 protobuf==6.31.1
 google-cloud-bigquery==3.20.1
 google-auth==2.29.0
+sqlalchemy
+psycopg2-binary

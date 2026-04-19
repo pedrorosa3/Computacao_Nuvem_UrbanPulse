@@ -26,11 +26,11 @@ spec:
             - name: LOCATION_SERVICE_URL
               value: "location-api:50054"
             - name: DEMAND_SERVICE_URL
-              value: "demand-service:50053"
+              value: "demand-api:50053"
             - name: PAYMENT_SERVICE_URL
-              value: "payment-api:50052"
+              value: "payment-svc:50052"
             - name: REVENUE_SERVICE_URL
-              value: "revenue-service:50055"
+              value: "revenue-api:50055"
           ports:
             - containerPort: 8003
               name: rest

@@ -1,10 +1,12 @@
+import os
+
 import grpc
 from . import location_service_pb2
 from . import location_service_pb2_grpc
 
 # Tens de confirmar com o Diogo qual é a porta gRPC dele! 
 # Vamos assumir que é a 50054 por agora.
-LOCATION_SERVICE_URL = "host.docker.internal:50054" 
+LOCATION_SERVICE_URL = os.getenv("LOCATION_SERVICE_URL", "location-api:50054")
 
 def fetch_zone_info(zone_id: int) -> dict:
     """Vai buscar o nome e bairro da zona ao Location Service."""

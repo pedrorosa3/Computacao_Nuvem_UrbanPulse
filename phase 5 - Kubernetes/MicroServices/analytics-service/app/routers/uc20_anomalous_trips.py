@@ -13,7 +13,7 @@ from app import (
 router = APIRouter()
 
 TRIP_SERVICE_URL    = os.getenv("TRIP_SERVICE_URL",    "trip-api:50051")
-REVENUE_SERVICE_URL = os.getenv("REVENUE_SERVICE_URL", "revenue-service:50055")
+REVENUE_SERVICE_URL = os.getenv("REVENUE_SERVICE_URL", "revenue-api:50055")
 
 
 def safe_float(value, default=0.0):
