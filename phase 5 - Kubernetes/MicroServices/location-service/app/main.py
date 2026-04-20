@@ -16,6 +16,8 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
+    docs_url="/locations/docs",
+    openapi_url="/locations/openapi.json",
     title="UrbanPulse — Location Service",
     version="1.0.0",
     description="Historical urban mobility analytics — Location Service",
@@ -28,8 +30,10 @@ app.include_router(uc06_od_pairs.router)
 app.include_router(uc07_zone_profile.router)
 app.include_router(uc_zones.router)
 
-
-
 @app.get("/health")
+def health():
+    return {"status": "ok"}
+
+@app.get("/locations/health")
 def health():
     return {"status": "ok"}

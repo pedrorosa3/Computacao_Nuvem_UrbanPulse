@@ -13,8 +13,8 @@ DB_CONFIG = {
 }
 
 BASE_DIR   = os.path.dirname(os.path.abspath(__file__))
-ZONES_CSV  = "/home/diogocsousa27/taxi_zone_lookup.csv"
-TRIPS_CSV  = "/home/diogocsousa27/yellow_tripdata_2015-01_clean.csv"
+ZONES_CSV  = "/home/chatgptrei20/taxi_zone_lookup.csv"
+TRIPS_CSV  = "/home/chatgptrei20/yellow_tripdata_2015-01_clean.csv"
 
 # Limite de viagens para testes (remover para inserir tudo)
 SAMPLE_ROWS = 10000

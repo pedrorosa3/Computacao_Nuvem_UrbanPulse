@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
         - name: location-api
-          image: europe-west1-docker.pkg.dev/fc60250/urbanpulse/location-api:latest
+          image: europe-west1-docker.pkg.dev/fcul60264/urbanpulse/location-api:latest
           imagePullPolicy: Always
           env:
             - name: DB_HOST
@@ -49,13 +49,13 @@ spec:
               memory: "512Mi"
           livenessProbe:
             httpGet:
-              path: /health
+              path: /locations/health
               port: 8000
             initialDelaySeconds: 15
             periodSeconds: 30
           readinessProbe:
             httpGet:
-              path: /health
+              path: /locations/health
               port: 8000
             initialDelaySeconds: 5
             periodSeconds: 10

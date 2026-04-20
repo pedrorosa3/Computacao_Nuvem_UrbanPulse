@@ -22,6 +22,8 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
+    docs_url="/trips/docs",
+    openapi_url="/trips/openapi.json",
     title="UrbanPulse — Trip Service",
     version="1.0.0",
     description=(
@@ -43,5 +45,9 @@ app.include_router(uc22_submit_trip.router)
 
 
 @app.get("/health")
+def health():
+    return {"status": "ok", "service": "trip-service"}
+
+@app.get("/trips/health")
 def health():
     return {"status": "ok", "service": "trip-service"}
