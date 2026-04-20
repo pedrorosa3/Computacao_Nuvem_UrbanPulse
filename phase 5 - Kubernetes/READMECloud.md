@@ -116,6 +116,7 @@ kubectl apply -f ~/kubernetesCloud/demand-service/
 kubectl apply -f ~/kubernetesCloud/revenue-service/
 kubectl apply -f ~/kubernetesCloud/trip-service/
 kubectl apply -f ~/kubernetesCloud/payment-service/
+kubectl apply -f ~/kubernetesCloud/ingress.yaml
 ```
 
 ## 5 - Verificar os pods
@@ -160,11 +161,14 @@ pip install sqlalchemy psycopg2-binary
 python3 seed.py
 ```
 
-## 7 - Verificar o HPA
+## 7 - Verificar o HPA / Ingress
 
 ```bash
 kubectl get hpa -n urbanpulse
+
+kubectl get ingress -n urbanpulse
 ```
+
 
 ## 8 - Expor os serviços
 
