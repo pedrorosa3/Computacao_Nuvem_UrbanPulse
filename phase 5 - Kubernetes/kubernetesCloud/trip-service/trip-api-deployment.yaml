@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
         - name: trip-api
-          image: europe-west1-docker.pkg.dev/fc60250/urbanpulse/trip-api:latest
+          image: europe-west1-docker.pkg.dev/fcul60264/urbanpulse/trip-api:latest
           imagePullPolicy: Always
           env:
             - name: DB_HOST
@@ -47,13 +47,13 @@ spec:
               memory: "512Mi"
           livenessProbe:
             httpGet:
-              path: /health
+              path: /trips/health
               port: 8001
             initialDelaySeconds: 15
             periodSeconds: 30
           readinessProbe:
             httpGet:
-              path: /health
+              path: /trips/health
               port: 8001
             initialDelaySeconds: 5
             periodSeconds: 10
