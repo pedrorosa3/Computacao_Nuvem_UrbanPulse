@@ -25,25 +25,49 @@ E dos ficheiros CSV:
 
 > Nota: O upload só é necessário na primeira vez. O Cloud Shell guarda os ficheiros entre sessões.
 
-
 ## Alertas importantes
 
-Senão estiverem pode ser por ainda não terem colocado os docker no Artifact Registry, ver READMEArtifactRegistry.md
+- Todos os deployment YAMLs devem apontar para as vossas images no artifact registry.
+- Se o seed correr antes do init.sql criar a tabela, o pandas cria-a sem a coluna `id`, o que causa erros no gRPC. Nesse caso, apagar e recriar a tabela manualmente.
 
-Após estiverem bem colocados no ArtifactRegistry faz o passo 4 outra vez para aplicar os kubernetes.
+## 0 - Criar o Artifact Registry e fazer push das imagens (Mudar o fc60250 para o nome do vosso projeto)
 
-Alterei os recursos para 50 e 64 e meti o meu nome do projeto em todos os nomedoserviço-deployment.yaml em vez do fc60250.
+```bash
+gcloud artifacts repositories create urbanpulse \
+  --repository-format=docker \
+  --location=europe-west1
 
-verificar quando fazem o gcloud build o nome que metem ex: payment-service, depois no payment-service-deployment.yaml a linha deve estar assim:
+cd ~/MicroServices/location-service
+gcloud builds submit --tag europe-west1-docker.pkg.dev/fc60250/urbanpulse/location-api:latest .
 
-image: europe-west1-docker.pkg.dev/computacaonuvem60294/urbanpulse/payment-service:latest
+cd ~/MicroServices/analytics-service
+gcloud builds submit --tag europe-west1-docker.pkg.dev/fc60250/urbanpulse/analytics-api:latest .
+
+cd ~/MicroServices/demand-service
+gcloud builds submit --tag europe-west1-docker.pkg.dev/fc60250/urbanpulse/demand-api:latest .
+
+cd ~/MicroServices/revenue-service
+gcloud builds submit --tag europe-west1-docker.pkg.dev/fc60250/urbanpulse/revenue-api:latest .
+
+cd ~/MicroServices/trip-service
+gcloud builds submit --tag europe-west1-docker.pkg.dev/fc60250/urbanpulse/trip-api:latest .
+
+cd ~/MicroServices/payment-service
+gcloud builds submit --tag europe-west1-docker.pkg.dev/fc60250/urbanpulse/payment-service:latest .
+```
+
+Verificar que as 6 imagens estão no registry:
+
+```bash
+gcloud artifacts docker images list europe-west1-docker.pkg.dev/fc60250/urbanpulse
+```
 
 ## 1 - Criar o cluster
 
 ```bash
 gcloud container clusters create urbanpulse \
   --zone=europe-west1-b \
-  --num-nodes=2 \
+  --num-nodes=4 \
   --machine-type=e2-small \
   --disk-size=20 \
   --no-enable-autoupgrade
@@ -59,12 +83,28 @@ kubectl create namespace urbanpulse
 
 ## 3 - Criar os ConfigMaps (init.sql de cada DB)
 
+> Este passo tem de ser feito ANTES de aplicar os YAMLs, para garantir que o PostgreSQL cria as tabelas com o schema correto.
+
 ```bash
 kubectl create configmap location-db-init \
   --from-file=init.sql=/home/diogocsousa27/MicroServices/location-service/db/init.sql \
   -n urbanpulse
 
-kubectl create configmap payment-db-init   --from-file=init.sql=/home/pedromjrosa333/MicroServices/payment-service/init.sql   -n urbanpulse
+kubectl create configmap demand-db-init \
+  --from-file=init.sql=/home/diogocsousa27/MicroServices/demand-service/db/init.sql \
+  -n urbanpulse
+
+kubectl create configmap revenue-db-init \
+  --from-file=init.sql=/home/diogocsousa27/MicroServices/revenue-service/db/init.sql \
+  -n urbanpulse
+
+kubectl create configmap trip-db-init \
+  --from-file=init.sql=/home/diogocsousa27/MicroServices/trip-service/db/init.sql \
+  -n urbanpulse
+
+kubectl create configmap payment-db-init \
+  --from-file=init.sql=/home/diogocsousa27/MicroServices/payment-service/init.sql \
+  -n urbanpulse
 ```
 
 ## 4 - Aplicar os yamls
@@ -72,12 +112,16 @@ kubectl create configmap payment-db-init   --from-file=init.sql=/home/pedromjros
 ```bash
 kubectl apply -f ~/kubernetesCloud/location-service/
 kubectl apply -f ~/kubernetesCloud/analytics-service/
+kubectl apply -f ~/kubernetesCloud/demand-service/
+kubectl apply -f ~/kubernetesCloud/revenue-service/
+kubectl apply -f ~/kubernetesCloud/trip-service/
 kubectl apply -f ~/kubernetesCloud/payment-service/
+kubectl apply -f ~/kubernetesCloud/ingress.yaml
 ```
 
 ## 5 - Verificar os pods
 
-Esperar 1 minuto antes de executar o comando, para dar tempo aos pods de iniciarem.
+Esperar 1-2 minutos antes de executar o comando, para dar tempo aos pods de iniciarem.
 
 ```bash
 kubectl get pods -n urbanpulse
@@ -86,58 +130,83 @@ kubectl get pods -n urbanpulse
 
 ## 6 - Popular a base de dados (seed)
 
-```bash
-# Expor a DB
-kubectl port-forward svc/location-db 5437:5432 -n urbanpulse &
+> Correr o seed DEPOIS dos pods estarem todos 1/1 Running, para garantir que as tabelas já foram criadas pelo init.sql.
 
-# Correr o seed
+```bash
+# Location
+kubectl port-forward svc/location-db 5437:5432 -n urbanpulse &
 cd ~/MicroServices/location-service
 pip3 install pandas
 python3 seed.py
 
-kubectl port-forward deployment/payment-db 5435:5432 -n urbanpulse &
-cd ~/MicroServices/payment-service
+# Demand
+kubectl port-forward svc/demand-db 5434:5432 -n urbanpulse &
+cd ~/MicroServices/demand-service
 python3 seed.py
 
+# Revenue
+kubectl port-forward svc/revenue-db 5433:5432 -n urbanpulse &
+cd ~/MicroServices/revenue-service
+python3 seed.py
+
+# Trip
+kubectl port-forward svc/trip-db 5436:5432 -n urbanpulse &
+cd ~/MicroServices/trip-service
+python3 seed.py
+
+# Payment
+kubectl port-forward svc/payment-db 5435:5432 -n urbanpulse &
+cd ~/MicroServices/payment-service
+pip install sqlalchemy psycopg2-binary
+python3 seed.py
 ```
 
-## 7 - Verificar o HPA
+## 7 - Verificar o HPA / Ingress
 
 ```bash
 kubectl get hpa -n urbanpulse
+
+kubectl get ingress -n urbanpulse
 ```
 
-## 8 - Testar os endpoints
+
+## 8 - Expor os serviços
 
 ```bash
 kubectl port-forward svc/location-api 8000:8000 -n urbanpulse &
+kubectl port-forward svc/trip-api 8001:8001 -n urbanpulse &
+kubectl port-forward svc/demand-api 8002:8002 -n urbanpulse &
 kubectl port-forward svc/analytics-api 8003:8003 -n urbanpulse &
 kubectl port-forward svc/payment-svc 8006:8006 -n urbanpulse &
+kubectl port-forward svc/revenue-api 8007:8007 -n urbanpulse &
 ```
 
-Usar o Web Preview no Cloud Shell (ícone no topo) para testar:
+## 9 - Testar os endpoints
 
-- `/health`
-- `/locations/pickup/ranking`
-- `/locations/161/profile`
-- `/analytics/mobility-comparison`
+Usar o Web Preview no Cloud Shell (ícone no topo) para testar. O `?authuser=2` deve estar sempre no fim do URL.
 
-Para testa o payment-service, meter no porto 8006 e usar o docs para ter acesso à interface interativa do swagger.
+```
+https://8000-cs-XXXXXXX-default.cs-europe-west1-haha.cloudshell.dev/locations/pickup/ranking?authuser=2
+https://8000-cs-XXXXXXX-default.cs-europe-west1-haha.cloudshell.dev/locations/161/profile?authuser=2
+https://8003-cs-XXXXXXX-default.cs-europe-west1-haha.cloudshell.dev/analytics/mobility-comparison?authuser=2
+https://8006-cs-XXXXXXX-default.cs-europe-west1-haha.cloudshell.dev/docs?authuser=2
+https://8002-cs-XXXXXXX-default.cs-europe-west1-haha.cloudshell.dev/docs?authuser=2
+https://8007-cs-XXXXXXX-default.cs-europe-west1-haha.cloudshell.dev/docs?authuser=2
+https://8001-cs-XXXXXXX-default.cs-europe-west1-haha.cloudshell.dev/docs?authuser=2
+```
 
- `/docs`
+> Substituir `XXXXXXX` pelo ID do vosso Cloud Shell (ex: `146652400283`). Este ID é encontrado se abrirem uma web preview.
 
-> É necessário trocar a porta consoante o microserviço que estamos a verificar.
-
-## 9 - Testar rollback
+## 10 - Testar rollback
 
 ```bash
 # Ver histórico de versões
 kubectl rollout history deployment/location-api -n urbanpulse
-kubectl rollout history deployment/payment-svc -n urbanpulse
+kubectl rollout history deployment/payment-deploy -n urbanpulse
 
 # Fazer rollback
 kubectl rollout undo deployment/location-api -n urbanpulse
-kubectl rollout undo deployment/payment-svc -n urbanpulse
+kubectl rollout undo deployment/payment-deploy -n urbanpulse
 ```
 
 ## Como parar para não gastar créditos
@@ -146,21 +215,26 @@ kubectl rollout undo deployment/payment-svc -n urbanpulse
 gcloud container clusters delete urbanpulse --zone=europe-west1-b
 ```
 
+Verificar também em **Compute Engine → Disks** se ficaram discos órfãos e apagá-los.
+
 ## Portas
 
-| Serviço           | REST | gRPC  | BD   |
-| ----------------- | ---- | ----- | ---- |
-| Location Service  | 8000 | 50054 | 5437 |
-| Demand Service    | 8002 | 50053 | 5434 |
-| Payment Service   | 8006 | 50052 | 5435 |
-| Trip Service      | 8001 | 50051 | 5436 |
-| Analytics Service | 8003 | —     | —    |
-| Revenue Service   | 8007 | 50055 | 5433 |
-
+| Serviço           | REST | gRPC  | BD (port-forward ) |
+| ----------------- | ---- | ----- | ------------------ |
+| Location Service  | 8000 | 50054 | 5437               |
+| Demand Service    | 8002 | 50053 | 5434               |
+| Payment Service   | 8006 | 50052 | 5435               |
+| Trip Service      | 8001 | 50051 | 5436               |
+| Analytics Service | 8003 | —     | —                  |
+| Revenue Service   | 8007 | 50055 | 5433               |
 
 ## Imagens no Artifact Registry
 
 ```
 europe-west1-docker.pkg.dev/fc60250/urbanpulse/location-api:latest
 europe-west1-docker.pkg.dev/fc60250/urbanpulse/analytics-api:latest
+europe-west1-docker.pkg.dev/fc60250/urbanpulse/demand-api:latest
+europe-west1-docker.pkg.dev/fc60250/urbanpulse/revenue-api:latest
+europe-west1-docker.pkg.dev/fc60250/urbanpulse/trip-api:latest
+europe-west1-docker.pkg.dev/fc60250/urbanpulse/payment-service:latest
 ```

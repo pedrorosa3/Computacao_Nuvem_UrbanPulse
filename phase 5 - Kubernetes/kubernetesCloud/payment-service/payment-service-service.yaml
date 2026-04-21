@@ -4,10 +4,15 @@ metadata:
   name: payment-svc
   namespace: urbanpulse
 spec:
-  type: ClusterIP
+  type: NodePort
   selector:
     app: payment-service
   ports:
     - protocol: TCP
+      name: rest
       port: 8006
       targetPort: 8006
+    - protocol: TCP
+      name: grpc
+      port: 50052
+      targetPort: 50052

@@ -14,6 +14,8 @@ async def lifespan(app: FastAPI):
     grpc_server_instance.stop(0)
 
 app = FastAPI(
+    docs_url="/demand/docs",
+    openapi_url="/demand/openapi.json",
     title="UrbanPulse – Demand Service API",
     description="Historical demand analysis of NYC Yellow Taxi trip data.",
     version="1.0.0",
@@ -25,5 +27,9 @@ app.include_router(monthly_trend.router,  prefix="/demand")
 app.include_router(volatility.router,     prefix="/demand") # O teu UC17!
 
 @app.get("/health")
+def health():
+    return {"status": "ok", "service": "demand"}
+
+@app.get("/demand/health")
 def health():
     return {"status": "ok", "service": "demand"}

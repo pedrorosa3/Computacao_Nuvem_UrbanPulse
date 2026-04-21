@@ -12,7 +12,7 @@ from app import (
 router = APIRouter()
 
 TRIP_SERVICE_URL    = os.getenv("TRIP_SERVICE_URL",    "trip-api:50051")
-PAYMENT_SERVICE_URL = os.getenv("PAYMENT_SERVICE_URL", "payment-api:50052")
+PAYMENT_SERVICE_URL = os.getenv("PAYMENT_SERVICE_URL", "payment-svc:50052")
 
 
 SAMPLE_SIZE = 500
