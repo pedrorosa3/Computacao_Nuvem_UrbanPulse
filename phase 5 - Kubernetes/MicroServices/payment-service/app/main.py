@@ -17,14 +17,20 @@ async def lifespan(app: FastAPI):
     print("🛑 Servidor gRPC desligado.")
 
 app = FastAPI(
+    docs_url="/payments/docs",
+    openapi_url="/payments/openapi.json",
     title="Payment Service API - UrbanPulse",
     description="API do microserviço de pagamentos desenvolvida por Pedro Rosa.",
     version="1.0.0",
     lifespan=lifespan # Dizemos ao FastAPI para usar a função que gere o gRPC
 )
 
-app.include_router(payments.router, prefix="/api/v1/payments", tags=["Payments"])
+app.include_router(payments.router, prefix="/payments", tags=["Payments"])
 
-@app.get("/")
-def root():
-    return {"message": "Payment Service está online!"}
+@app.get("/health")
+def health():
+    return {"status": "ok", "service": "payment-service"}
+
+@app.get("/payments/health")
+def health():
+    return {"status": "ok", "service": "payment-service"}

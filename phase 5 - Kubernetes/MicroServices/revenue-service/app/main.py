@@ -4,6 +4,8 @@ from app.routers import avg_fare, breakdown, fare_per_km
 from app.grpc_server import serve as grpc_serve
 
 app = FastAPI(
+    docs_url="/revenue/docs",
+    openapi_url="/revenue/openapi.json",
     title="UrbanPulse – Revenue & Pricing Intelligence API",
     description="Historical revenue and pricing analysis of NYC Yellow Taxi trip data.",
     version="1.0.0",
@@ -20,7 +22,11 @@ def startup_grpc():
     t = threading.Thread(target=grpc_server.wait_for_termination, daemon=True)
     t.start()
 
-
 @app.get("/health")
+def health():
+    return {"status": "ok", "service": "revenue"}
+
+
+@app.get("/revenue/health")
 def health():
     return {"status": "ok", "service": "revenue"}

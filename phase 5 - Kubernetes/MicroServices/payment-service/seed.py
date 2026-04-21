@@ -1,28 +1,52 @@
 import pandas as pd
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 
-# URL de ligação à DB através do teu PC local (porta 5434)
 DATABASE_URL = "postgresql://admin:password@localhost:5435/payment_db"
 engine = create_engine(DATABASE_URL)
 
-print("A ler o dataset...")
-df = pd.read_csv("/home/diogocsousa27/yellow_tripdata_2015-01_clean.csv", nrows=10000)
+with engine.connect() as conn:
+    # Verificar se a coluna id existe
+    result = conn.execute(text("""
+        SELECT column_name FROM information_schema.columns 
+        WHERE table_name='trips' AND column_name='id'
+    """))
+    has_id = result.fetchone() is not None
 
-# Mapear os IDs de pagamento do dataset original para texto
+    if not has_id:
+        # Tabela não existe ou existe sem id — apagar e recriar
+        conn.execute(text("DROP TABLE IF EXISTS trips"))
+        conn.execute(text("""
+            CREATE TABLE trips (
+                id SERIAL PRIMARY KEY,
+                pickup_date DATE NOT NULL,
+                pickup_zone_id INTEGER NOT NULL,
+                payment_type VARCHAR NOT NULL,
+                fare_amount FLOAT NOT NULL,
+                tip_amount FLOAT DEFAULT 0,
+                passenger_count INTEGER
+            )
+        """))
+        conn.commit()
+        print("Tabela recriada com schema correto.")
+    else:
+        # Tabela existe com id — limpar dados anteriores
+        conn.execute(text("TRUNCATE TABLE trips RESTART IDENTITY"))
+        conn.commit()
+        print("Tabela limpa, pronta para novo seed.")
+
+print("A ler o dataset...")
+df = pd.read_csv("/home/chatgptrei20/yellow_tripdata_2015-01_clean.csv", nrows=10000)
+
 payment_map = {1: 'card', 2: 'cash', 3: 'no_charge', 4: 'dispute', 5: 'unknown', 6: 'voided'}
 df['payment_type'] = df['payment_type'].map(payment_map).fillna('unknown')
-
-# Converter a data/hora para apenas Data (DATE) como definiste no esquema
 df['pickup_date'] = pd.to_datetime(df['tpep_pickup_datetime']).dt.date
 
-# Selecionar apenas as colunas que interessam para o Payment Service
-# Agora usamos 'pickup_zone_id' porque o teu script taxiZones.py já a criou com esse nome!
 df_payments = df[[
-    'pickup_date', 
-    'pickup_zone_id', 
-    'payment_type', 
-    'fare_amount', 
-    'tip_amount', 
+    'pickup_date',
+    'pickup_zone_id',
+    'payment_type',
+    'fare_amount',
+    'tip_amount',
     'passenger_count'
 ]]
 

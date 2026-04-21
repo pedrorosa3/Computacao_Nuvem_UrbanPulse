@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: revenue-api
-          image: europe-west1-docker.pkg.dev/fc60250/urbanpulse/revenue-api:latest
+          image: europe-west1-docker.pkg.dev/fcul60264/urbanpulse/revenue-api:latest
           imagePullPolicy: Always
           env:
             - name: DATABASE_URL
@@ -39,13 +39,13 @@ spec:
               name: grpc
           livenessProbe:
             httpGet:
-              path: /health
+              path: /revenue/health
               port: 8007
             initialDelaySeconds: 15
             periodSeconds: 30
           readinessProbe:
             httpGet:
-              path: /health
+              path: /revenue/health
               port: 8007
             initialDelaySeconds: 5
             periodSeconds: 10
