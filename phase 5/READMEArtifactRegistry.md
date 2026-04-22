@@ -1,0 +1,43 @@
+# Como fazer push de uma imagem para o Artifact Registry
+
+## 1 — Abrir o Cloud Shell
+
+Aceder a https://console.cloud.google.com e clicar no ícone `>_` no canto superior direito.
+
+---
+
+## 2 — Build e push da imagem
+
+```bash
+cd ~/MicroServices/[nome-servico]
+gcloud builds submit --tag europe-west1-docker.pkg.dev/computacaonuvem60294/urbanpulse/[nome-servico]:latest .
+```
+
+Demora ~2-3 minutos. Quando terminar deves ver `STATUS: SUCCESS`.
+
+---
+
+## Exemplos por serviço
+
+| Serviço         | Comando                                                                                              |
+| --------------- | ---------------------------------------------------------------------------------------------------- |
+| demand-service  | `gcloud builds submit --tag europe-west1-docker.pkg.dev/computacaonuvem60294/urbanpulse/demand-service:latest .`  |
+| payment-service | `gcloud builds submit --tag europe-west1-docker.pkg.dev/computacaonuvem60294/urbanpulse/payment-service:latest .` |
+| trip-service    | `gcloud builds submit --tag europe-west1-docker.pkg.dev/computacaonuvem60294/urbanpulse/trip-service:latest .`    |
+| revenue-service | `gcloud builds submit --tag europe-west1-docker.pkg.dev/computacaonuvem60294/urbanpulse/revenue-service:latest .` |
+
+---
+
+## Verificar que a imagem foi guardada
+
+```bash
+gcloud artifacts docker images list europe-west1-docker.pkg.dev/computacaonuvem60294/urbanpulse
+```
+
+---
+
+## Notas
+
+- O repositório `urbanpulse` já está criado no Artifact Registry — não é necessário criar um novo.
+- O Cloud Build já tem permissões configuradas — não é necessário fazer nenhuma configuração adicional.
+- Só é necessário fazer push quando o código muda. Se o código não mudou, a imagem já está no Artifact Registry.
