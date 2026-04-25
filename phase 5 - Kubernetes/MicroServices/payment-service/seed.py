@@ -35,7 +35,7 @@ with engine.connect() as conn:
         print("Tabela limpa, pronta para novo seed.")
 
 print("A ler o dataset...")
-df = pd.read_csv("/home/chatgptrei20/yellow_tripdata_2015-01_clean.csv", nrows=10000)
+df = pd.read_csv("/home/diogocsousa27/yellow_tripdata_2015-01_clean.csv", nrows=10000)
 
 payment_map = {1: 'card', 2: 'cash', 3: 'no_charge', 4: 'dispute', 5: 'unknown', 6: 'voided'}
 df['payment_type'] = df['payment_type'].map(payment_map).fillna('unknown')

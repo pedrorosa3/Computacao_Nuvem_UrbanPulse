@@ -7,6 +7,13 @@ Aceder a https://console.cloud.google.com e clicar no ícone `>_` no canto super
 ---
 
 ## 2 — Build e push da imagem
+Criar repo para as imagens, caso nao esteja já criado
+```bash
+gcloud artifacts repositories create urbanpulse \
+  --repository-format=docker \
+  --location=europe-west1 \
+  --description="Repo de imagens"
+```
 
 ```bash
 cd ~/MicroServices/[nome-servico]
@@ -21,10 +28,10 @@ Demora ~2-3 minutos. Quando terminar deves ver `STATUS: SUCCESS`.
 
 | Serviço         | Comando                                                                                              |
 | --------------- | ---------------------------------------------------------------------------------------------------- |
-| demand-service  | `gcloud builds submit --tag europe-west1-docker.pkg.dev/fc60250/urbanpulse/demand-service:latest .`  |
-| payment-service | `gcloud builds submit --tag europe-west1-docker.pkg.dev/fc60250/urbanpulse/payment-service:latest .` |
-| trip-service    | `gcloud builds submit --tag europe-west1-docker.pkg.dev/fc60250/urbanpulse/trip-service:latest .`    |
-| revenue-service | `gcloud builds submit --tag europe-west1-docker.pkg.dev/fc60250/urbanpulse/revenue-service:latest .` |
+| demand-service  | `gcloud builds submit --tag europe-west1-docker.pkg.dev/fc60250/urbanpulse/demand-api:latest .`  |
+| payment-service | `gcloud builds submit --tag europe-west1-docker.pkg.dev/fc60250/urbanpulse/payment-api:latest .` |
+| trip-service    | `gcloud builds submit --tag europe-west1-docker.pkg.dev/fc60250/urbanpulse/trip-api:latest .`    |
+| revenue-service | `gcloud builds submit --tag europe-west1-docker.pkg.dev/fc60250/urbanpulse/revenue-api:latest .` |
 
 ---
 
