@@ -38,31 +38,9 @@ Prometheus Instrumentator: Integração da biblioteca prometheus-fastapi-instrum
 
 3.1. Diagrama de Arquitetura da Aplicação
 
-Fragmento do código
+![Descrição da Arquitetura](images/phase6_arq.png)
 
-graph TD
-    Client((Client / Load Balancer)) -->|HTTP Requests| Ingress[Ingress Controller]
-    Ingress -->|Route to :8006| PaymentSVC[Payment Service K8s Service]
-    
-    subgraph K8s Namespace: urbanpulse
-        PaymentSVC --> PaymentAPI[Payment API Pods FastAPI]
-        
-        Prometheus((Prometheus Server)) -.->|Scrapes /metrics| PaymentAPI
-        K8sSecret[(Kubernetes Secret\nDB Credentials)] -.->|Injected as Env Vars| PaymentAPI
-        
-        PaymentAPI -->|1. Check Cache| RedisSVC[Redis Service]
-        RedisSVC --> RedisPod[(Redis Cache Pod)]
-        
-        PaymentAPI -->|2. Query if Cache Miss| DBSVC[Payment DB Service :5435]
-        DBSVC --> DBPod[(PostgreSQL DB Pod :5432)]
-    end
-    
-    classDef secret fill:#f9d0c4,stroke:#333,stroke-width:2px;
-    class K8sSecret secret;
-    classDef cache fill:#d4f1f4,stroke:#333,stroke-width:2px;
-    class RedisPod cache;
 
-    
 4. Plano de Deployment (Para a Fase 7)
 Para concretizar esta arquitetura na próxima fase, a seguinte sequência de ações será executada:
 
