@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
         - name: trip-api
-          image: europe-west1-docker.pkg.dev/fcul60264/urbanpulse/trip-api:latest
+          image: europe-west1-docker.pkg.dev/fc60250/urbanpulse/trip-api:latest
           imagePullPolicy: Always
           env:
             - name: DB_HOST

@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: payment-service
-          image: europe-west1-docker.pkg.dev/fcul60264/urbanpulse/payment-service:latest
+          image: europe-west1-docker.pkg.dev/fc60250/urbanpulse/payment-service:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8006
