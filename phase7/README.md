@@ -28,6 +28,11 @@ Colocar no main.py :
 from prometheus_fastapi_instrumentator import Instrumentator
 
 # Logo abaixo da criação da app = FastAPI()
+
 Instrumentator().instrument(app).expose(app)
 
 Não esquecer de colocar nos requirements, estes novos requirements.
+
+## testar 
+
+ver o /metrics no endpoint e testar ao fazer o execute numas das querys que ao fazer o execute pela segunda vez, é muito mais rápido que o primeiro execute.
