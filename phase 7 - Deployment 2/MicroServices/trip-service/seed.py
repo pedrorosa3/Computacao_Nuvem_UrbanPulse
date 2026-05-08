@@ -1,29 +1,17 @@
-import psycopg2
 import pandas as pd
 import numpy as np
-import sys
 import os
+from sqlalchemy import create_engine, text
 
-# ── Config ───────────────────────────────────────────────────────────────────
-DB_CONFIG = {
-    "host":     "localhost",
-    "port":     5436,
-    "dbname":   "trip_db",
-    "user":     "admin",
-    "password": "isqueiro20",
-}
+DATABASE_URL = "postgresql://admin:isqueiro20@localhost:5436/trip_db"
+engine = create_engine(DATABASE_URL)
 
-BASE_DIR  = os.path.dirname(os.path.abspath(__file__))
-TRIPS_CSV = "/home/diogocsousa27/yellow_tripdata_2015-01_clean.csv"
-
+TRIPS_CSV        = "/home/diogocsousa27/yellow_tripdata_2015-01_clean.csv"
 MILES_TO_KM      = 1.60934
-REFERENCE_SPEED  = 12.0   # mph — used for deviation index
+REFERENCE_SPEED  = 12.0
 SLOW_KMH         = 15.0
 FAST_KMH         = 30.0
-
-PAYMENT_MAP = {1: "card", 2: "cash", 3: "no_charge", 4: "dispute"}
-
-# ── Helpers ───────────────────────────────────────────────────────────────────
+PAYMENT_MAP      = {1: "card", 2: "cash", 3: "no_charge", 4: "dispute"}
 
 def classify_time(hour):
     if 7 <= hour <= 9 or 16 <= hour <= 19:
@@ -88,19 +76,7 @@ def compute_suspicion(row):
         score += 1
     return score
 
-# ── Ligação ───────────────────────────────────────────────────────────────────
-print("A ligar à base de dados...")
-try:
-    conn = psycopg2.connect(**DB_CONFIG)
-    cur = conn.cursor()
-    print("  → Ligado com sucesso")
-except Exception as e:
-    print(f"  → Erro ao ligar: {e}")
-    sys.exit(1)
-
-# ── Carregar CSV ──────────────────────────────────────────────────────────────
-print(f"\nA carregar viagens de '{TRIPS_CSV}'...")
-
+print(f"A carregar viagens de '{TRIPS_CSV}'...")
 trips = pd.read_csv(TRIPS_CSV, usecols=[
     "tpep_pickup_datetime",
     "tpep_dropoff_datetime",
@@ -114,11 +90,10 @@ trips = pd.read_csv(TRIPS_CSV, usecols=[
     "tip_amount",
     "total_amount",
     "payment_type",
-], nrows=10000)  # Remover nrows para o dataset completo
+], nrows=10000)
 
 trips["tpep_pickup_datetime"]  = pd.to_datetime(trips["tpep_pickup_datetime"])
 trips["tpep_dropoff_datetime"] = pd.to_datetime(trips["tpep_dropoff_datetime"])
-
 trips["trip_duration_min"] = (
     trips["tpep_dropoff_datetime"] - trips["tpep_pickup_datetime"]
 ).dt.total_seconds() / 60.0
@@ -137,9 +112,7 @@ trips = trips.dropna(subset=[
     "trip_distance", "fare_amount"
 ])
 
-# ── Enrich ────────────────────────────────────────────────────────────────────
 print("A calcular colunas enriquecidas...")
-
 trips["time_class"]       = trips["tpep_pickup_datetime"].dt.hour.apply(classify_time)
 trips["trip_distance_km"] = trips["trip_distance"] * MILES_TO_KM
 
@@ -151,18 +124,18 @@ speed = trips.apply(lambda r: compute_speed(r["trip_distance"], r["trip_duration
 trips["avg_speed_kmh"] = speed.apply(lambda x: x[0])
 trips["speed_class"]   = speed.apply(lambda x: x[1])
 
-trips["suspicion_score"]   = trips.apply(compute_suspicion, axis=1)
-trips["payment_type_str"]  = trips["payment_type"].map(PAYMENT_MAP).fillna("unknown")
+trips["suspicion_score"]  = trips.apply(compute_suspicion, axis=1)
+trips["payment_type_str"] = trips["payment_type"].map(PAYMENT_MAP).fillna("unknown")
 
 trips = trips.where(pd.notnull(trips), other=None)
-trips["avg_speed_kmh"] = trips["avg_speed_kmh"].astype(object).where(trips["avg_speed_kmh"].notna(), None)
+trips["avg_speed_kmh"]   = trips["avg_speed_kmh"].astype(object).where(trips["avg_speed_kmh"].notna(), None)
 trips["deviation_index"] = trips["deviation_index"].astype(object).where(trips["deviation_index"].notna(), None)
 
-# ── Insert ────────────────────────────────────────────────────────────────────
-cur.execute("TRUNCATE TABLE trips RESTART IDENTITY CASCADE;")
+with engine.connect() as conn:
+    conn.execute(text("TRUNCATE TABLE trips RESTART IDENTITY CASCADE;"))
+    conn.commit()
 
-BATCH_SIZE = 1000
-records = list(trips[[
+df_insert = trips[[
     "tpep_pickup_datetime", "tpep_dropoff_datetime",
     "pickup_zone_id", "dropoff_zone_id",
     "pickup_zone_name", "dropoff_zone_name",
@@ -170,32 +143,13 @@ records = list(trips[[
     "passenger_count", "payment_type_str",
     "time_class", "deviation_index", "deviation_class",
     "avg_speed_kmh", "speed_class", "suspicion_score",
-]].itertuples(index=False, name=None))
+]].rename(columns={
+    "tpep_pickup_datetime":  "pickup_datetime",
+    "tpep_dropoff_datetime": "dropoff_datetime",
+    "payment_type_str":      "payment_type",
+})
 
-for i in range(0, len(records), BATCH_SIZE):
-    batch = records[i:i + BATCH_SIZE]
-    cur.executemany(
-        """
-        INSERT INTO trips (
-            pickup_datetime, dropoff_datetime,
-            pickup_zone_id, dropoff_zone_id,
-            pickup_zone_name, dropoff_zone_name,
-            trip_distance_km, fare_amount, tip_amount,
-            passenger_count, payment_type,
-            time_class, deviation_index, deviation_class,
-            avg_speed_kmh, speed_class, suspicion_score
-        ) VALUES (
-            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-            %s, %s, %s, %s, %s, %s
-        );
-        """,
-        batch
-    )
-    conn.commit()
-    print(f"  → {min(i + BATCH_SIZE, len(records))}/{len(records)} viagens inseridas", end="\r")
-
-print(f"\n  → {len(records)} viagens inseridas no total")
-
-cur.close()
-conn.close()
-print("\nConcluído!")
+print("A inserir dados...")
+df_insert.to_sql('trips', engine, if_exists='append', index=False)
+print(f"  → {len(df_insert)} viagens inseridas")
+print("Concluído!")

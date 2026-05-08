@@ -137,32 +137,35 @@ kubectl get pods -n urbanpulse
 kubectl port-forward svc/location-db 5437:5432 -n urbanpulse &
 sleep 2
 cd ~/MicroServices/location-service
-pip3 install pandas
+pip3 install pandas sqlalchemy psycopg2-binary
 python3 seed.py
 
 # Demand
 kubectl port-forward svc/demand-db 5434:5432 -n urbanpulse &
 sleep 2
 cd ~/MicroServices/demand-service
+pip3 install pandas sqlalchemy psycopg2-binary
 python3 seed.py
 
 # Revenue
 kubectl port-forward svc/revenue-db 5433:5432 -n urbanpulse &
 sleep 2
 cd ~/MicroServices/revenue-service
+pip3 install pandas sqlalchemy psycopg2-binary
 python3 seed.py
 
 # Trip
 kubectl port-forward svc/trip-db 5436:5432 -n urbanpulse &
 sleep 2
 cd ~/MicroServices/trip-service
+pip3 install pandas sqlalchemy psycopg2-binary
 python3 seed.py
 
 # Payment
 kubectl port-forward svc/payment-db 5435:5432 -n urbanpulse &
 sleep 2
 cd ~/MicroServices/payment-service
-pip install sqlalchemy psycopg2-binary
+pip3 install pandas sqlalchemy psycopg2-binary
 python3 seed.py
 ```
 
@@ -174,8 +177,53 @@ kubectl get hpa -n urbanpulse
 kubectl get ingress -n urbanpulse
 ```
 
+Aguardar que o Ingress tenha um IP atribuído na coluna `ADDRESS`. Guardar esse IP — é necessário nos passos seguintes.
 
-## 8 - Expor os serviços
+## 8 - Deploy do Prometheus e Grafana
+
+> Este passo requer que o Ingress já tenha um IP atribuído (ver passo 7).
+
+**Atenção:** O `prometheus.yaml` contém o IP do Ingress hardcoded no argumento `--web.external-url`. Sempre que o cluster for recriado, o IP pode mudar. Nesse caso, atualizar o ficheiro antes de aplicar:
+
+```yaml
+# Em prometheus.yaml, dentro do Deployment:
+args:
+  - "--web.external-url=http://<NOVO_IP>/prometheus" # <- atualizar aqui
+  - "--web.route-prefix=/prometheus"
+```
+
+Aplicar o Prometheus e o Grafana:
+
+```bash
+kubectl apply -f ~/kubernetesCloud/prometheus.yaml
+kubectl apply -f ~/kubernetesCloud/grafana.yaml
+```
+
+Confirmar que os pods arrancaram:
+
+```bash
+kubectl get pods -n urbanpulse | grep -E "prometheus|grafana"
+# ambos devem estar: 1/1 Running
+```
+
+O GCE Load Balancer demora 3-5 minutos a propagar os novos backends. Após esse tempo, aceder a:
+
+- Prometheus: `http://<IP>/prometheus` → **Status → Targets** — os dois targets devem aparecer como `UP`
+- Grafana: `http://<IP>/grafana` — credenciais: utilizador `admin`, password `urbanpulse2026`
+
+## 9 - Configurar o Grafana
+
+A datasource do Prometheus já está configurada automaticamente. Para verificar:
+
+**Connections → Data sources → Prometheus → Save & test**
+
+Deve aparecer: _"Successfully queried the Prometheus API."_
+
+Para criar um dashboard: **Dashboards → New → New dashboard → Add visualization → selecionar Prometheus como datasource**.
+
+> **Nota:** Os dashboards criados manualmente no Grafana perdem-se quando o cluster é apagado.
+
+## 10 - Expor os serviços
 
 ```bash
 kubectl port-forward svc/location-api 8000:8000 -n urbanpulse &
@@ -186,7 +234,7 @@ kubectl port-forward svc/payment-svc 8006:8006 -n urbanpulse &
 kubectl port-forward svc/revenue-api 8007:8007 -n urbanpulse &
 ```
 
-## 9 - Testar os endpoints
+## 11 - Testar os endpoints
 
 Usar o Web Preview no Cloud Shell (ícone no topo) para testar. O `?authuser=2` deve estar sempre no fim do URL.
 
@@ -202,7 +250,7 @@ https://8001-cs-XXXXXXX-default.cs-europe-west1-haha.cloudshell.dev/docs?authuse
 
 > Substituir `XXXXXXX` pelo ID do vosso Cloud Shell (ex: `146652400283`). Este ID é encontrado se abrirem uma web preview.
 
-## 10 - Testar rollback
+## 12 - Testar rollback
 
 ```bash
 # Ver histórico de versões
@@ -224,14 +272,16 @@ Verificar também em **Compute Engine → Disks** se ficaram discos órfãos e a
 
 ## Portas
 
-| Serviço           | REST | gRPC  | BD (port-forward ) |
-| ----------------- | ---- | ----- | ------------------ |
-| Location Service  | 8000 | 50054 | 5437               |
-| Demand Service    | 8002 | 50053 | 5434               |
-| Payment Service   | 8006 | 50052 | 5435               |
-| Trip Service      | 8001 | 50051 | 5436               |
-| Analytics Service | 8003 | —     | —                  |
-| Revenue Service   | 8007 | 50055 | 5433               |
+| Serviço           | REST | gRPC  | BD (port-forward) |
+| ----------------- | ---- | ----- | ----------------- |
+| Location Service  | 8000 | 50054 | 5437              |
+| Demand Service    | 8002 | 50053 | 5434              |
+| Payment Service   | 8006 | 50052 | 5435              |
+| Trip Service      | 8001 | 50051 | 5436              |
+| Analytics Service | 8003 | —     | —                 |
+| Revenue Service   | 8007 | 50055 | 5433              |
+| Prometheus        | 9090 | —     | —                 |
+| Grafana           | 3000 | —     | —                 |
 
 ## Imagens no Artifact Registry
 

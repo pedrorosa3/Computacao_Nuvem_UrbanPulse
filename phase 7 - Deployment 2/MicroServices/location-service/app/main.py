@@ -29,7 +29,7 @@ app.include_router(uc06_od_pairs.router)
 app.include_router(uc07_zone_profile.router)
 app.include_router(uc_zones.router)
 
-Instrumentator().instrument(app).expose(app, endpoint="/metrics", include_in_schema=False)
+Instrumentator().instrument(app).expose(app, endpoint="/locations/metrics", include_in_schema=False)
 
 @app.get("/health")
 def health():

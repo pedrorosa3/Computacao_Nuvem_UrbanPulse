@@ -15,7 +15,7 @@ app.include_router(uc18_duration_tip.router)
 app.include_router(uc19_mobility_comparison.router)
 app.include_router(uc20_anomalous_trips.router)
 
-Instrumentator().instrument(app).expose(app, endpoint="/metrics", include_in_schema=False)
+Instrumentator().instrument(app).expose(app, endpoint="/analytics/metrics", include_in_schema=False)
 
 @app.get("/analytics/health")
 def health():
