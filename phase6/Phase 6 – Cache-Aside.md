@@ -51,14 +51,10 @@ Fluxo:
 - Implementar lógica cache-aside nos endpoints mais utilizados  
 - Definir chaves de cache com base nos parâmetros dos pedidos  
 
-Exemplo de chave:
-demand:zone:161:hour:18
-revenue:daily:2025-01-01
-
 
 ### 3. Configuração de TTL
 
-- Definir tempo de expiração (ex: 5–15 minutos)  
+- Definir tempo de permanência em cache
 - Ajustar conforme a frequência de atualização dos dados  
 
 ### 4. Testes
