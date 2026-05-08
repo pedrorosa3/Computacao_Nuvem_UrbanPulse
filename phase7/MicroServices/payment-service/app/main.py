@@ -18,7 +18,7 @@ async def lifespan(app: FastAPI):
     print("🚀 Servidor gRPC do Payment Service a correr na porta 50052!")
     
     # INICIALIZAR O REDIS AQUI DENTRO!
-    redis = aioredis.from_url("redis://redis-service:6379", encoding="utf8", decode_responses=True)
+    redis = aioredis.from_url("redis://redis-service:6379")
     FastAPICache.init(RedisBackend(redis), prefix="fastapi-cache")
     print("🚀 Cache Redis inicializada com sucesso!")
     
@@ -42,13 +42,19 @@ Instrumentator().instrument(app).expose(app)
 
 app.include_router(payments.router, prefix="/payments", tags=["Payments"])
 
+
+@app.get("/")
+def root_health():
+    """Endpoint vitalício para o Ingress (Load Balancer) do GKE saber que estamos vivos."""
+    return {"status": "ok", "message": "Payment Service Root is alive!"}
+
 #Endpoints de Health (com nomes de função diferentes para não dar conflito)
 @app.get("/health")
-@cache(expire=3600)
+
 async def health_root():
     return {"status": "ok", "service": "payment-service"}
 
 @app.get("/payments/health")
-@cache(expire=3600)
+
 async def health_payments():
     return {"status": "ok", "service": "payment-service"}
