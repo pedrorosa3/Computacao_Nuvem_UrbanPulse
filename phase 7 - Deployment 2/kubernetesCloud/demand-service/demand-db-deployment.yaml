@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demand-db
+  namespace: urbanpulse
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: demand-db
+  template:
+    metadata:
+      labels:
+        app: demand-db
+    spec:
+      containers:
+        - name: demand-db
+          image: postgres:16-alpine
+          env:
+            - name: POSTGRES_USER
+              value: "urbanpulse"
+            - name: POSTGRES_PASSWORD
+              value: "urbanpulse"
+            - name: POSTGRES_DB
+              value: "demand_db"
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          ports:
+            - containerPort: 5432
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          volumeMounts:
+            - name: demand-db-storage
+              mountPath: /var/lib/postgresql/data
+            - name: demand-db-init
+              mountPath: /docker-entrypoint-initdb.d
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "urbanpulse", "-d", "demand_db"]
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "urbanpulse", "-d", "demand_db"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      volumes:
+        - name: demand-db-storage
+          persistentVolumeClaim:
+            claimName: demand-db-pvc
+        - name: demand-db-init
+          configMap:
+            name: demand-db-init

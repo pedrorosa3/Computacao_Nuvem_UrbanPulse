@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  payment-db:
+    image: postgres:15-alpine
+    container_name: payment_postgres
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: payment_db
+    ports:
+      - "5434:5432" # Porta 5434 no teu PC liga à porta 5432 do container
+    volumes:
+      - payment_pgdata:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  payment-api:
+    build: .
+    container_name: payment_fastapi
+    ports:
+      - "50052:50052" # Servidor gRPC
+      - "8006:8000" # Porta 8006 no teu PC liga à porta 8000 do container
+    environment:
+      - DATABASE_URL=postgresql://admin:password@payment-db:5432/payment_db
+    depends_on:
+      - payment-db
+
+volumes:
+  payment_pgdata:
