@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: revenue-api
+  namespace: urbanpulse
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: revenue-api
+  template:
+    metadata:
+      labels:
+        app: revenue-api
+    spec:
+      containers:
+        - name: revenue-api
+          image: europe-west1-docker.pkg.dev/fc60250/urbanpulse/revenue-api:latest
+          imagePullPolicy: Always
+          env:
+            - name: DATABASE_URL
+              value: postgresql://urbanpulse:urbanpulse@revenue-db:5432/revenue_db
+            - name: TRIP_SERVICE_URL
+              value: trip-api:50051
+            - name: LOCATION_SERVICE_URL
+              value: "location-api:50054"
+            - name: TRIP_SERVICE_HOST
+              value: "trip-api"
+            - name: TRIP_SERVICE_PORT
+              value: "50051"
+            - name: LOCATION_SERVICE_HOST
+              value: "location-api"
+            - name: LOCATION_SERVICE_PORT
+              value: "50054"
+          ports:
+            - containerPort: 8007
+              name: rest
+            - containerPort: 50055
+              name: grpc
+          livenessProbe:
+            httpGet:
+              path: /revenue/health
+              port: 8007
+            initialDelaySeconds: 15
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /revenue/health
+              port: 8007
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
