@@ -6,7 +6,7 @@ from sqlalchemy import create_engine, text
 DATABASE_URL = "postgresql://admin:isqueiro20@localhost:5436/trip_db"
 engine = create_engine(DATABASE_URL)
 
-TRIPS_CSV        = "/home/diogocsousa27/yellow_tripdata_2015-01_clean.csv"
+TRIPS_CSV = os.path.join(os.path.expanduser("~"), "yellow_tripdata_2015-01_clean.csv")
 MILES_TO_KM      = 1.60934
 REFERENCE_SPEED  = 12.0
 SLOW_KMH         = 15.0

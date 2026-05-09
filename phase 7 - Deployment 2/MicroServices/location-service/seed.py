@@ -5,8 +5,8 @@ from sqlalchemy import create_engine, text
 DATABASE_URL = "postgresql://admin:isqueiro20@localhost:5437/location_db"
 engine = create_engine(DATABASE_URL)
 
-ZONES_CSV   = "/home/diogocsousa27/taxi_zone_lookup.csv"
-TRIPS_CSV   = "/home/diogocsousa27/yellow_tripdata_2015-01_clean.csv"
+ZONES_CSV = os.path.join(os.path.expanduser("~"), "taxi_zone_lookup.csv")
+TRIPS_CSV = os.path.join(os.path.expanduser("~"), "yellow_tripdata_2015-01_clean.csv")
 SAMPLE_ROWS = 10000
 
 # ── Zonas ─────────────────────────────────────────────────────────────────────
