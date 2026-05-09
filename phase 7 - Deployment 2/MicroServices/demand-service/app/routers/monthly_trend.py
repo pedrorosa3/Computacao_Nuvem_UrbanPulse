@@ -2,8 +2,48 @@ from fastapi import APIRouter, Query, HTTPException
 from typing import Optional
 from app.db.connection import get_conn
 import calendar
+import json
+import os
+
+try:
+    import redis
+except ImportError:  # permite a app arrancar mesmo que redis ainda não esteja no requirements
+    redis = None
 
 router = APIRouter()
+
+CACHE_TTL_SECONDS = int(os.getenv("CACHE_TTL_SECONDS", "300"))
+REDIS_URL = os.getenv("REDIS_URL")
+
+
+def get_redis_client():
+    if not REDIS_URL or redis is None:
+        return None
+    return redis.Redis.from_url(REDIS_URL, decode_responses=True)
+
+
+redis_client = get_redis_client()
+
+
+def cache_get(key: str):
+    if redis_client is None:
+        return None
+    try:
+        cached = redis_client.get(key)
+        return json.loads(cached) if cached else None
+    except Exception:
+        # Fail-open: se Redis falhar, continua a responder via PostgreSQL
+        return None
+
+
+def cache_set(key: str, value: dict):
+    if redis_client is None:
+        return
+    try:
+        redis_client.setex(key, CACHE_TTL_SECONDS, json.dumps(value))
+    except Exception:
+        # Fail-open: não deixar Redis quebrar o endpoint
+        pass
 
 
 @router.get("/monthly-trend", summary="UC16 – Monthly trip volume trend with percentage variation")
@@ -13,6 +53,20 @@ def monthly_trend(
     year_to:    Optional[int] = Query(None, example=2016),
     compare_by: str           = Query("month", enum=["month", "year"]),
 ):
+
+    use_cache = (
+    zone_id is None and
+    year_from is None and
+    year_to is None
+    )
+    
+    cache_key = f"demand:monthly-trend:compare_by:{compare_by}:v1"
+
+    if use_cache:
+        cached_response = cache_get(cache_key)
+        if cached_response is not None:
+            return cached_response
+
     # Usar colunas pré-calculadas em vez de EXTRACT()
     conditions = []
     params: list = []
@@ -48,7 +102,7 @@ def monthly_trend(
         raise HTTPException(status_code=500, detail=str(e))
 
     if not rows:
-        return {
+        response = {
             "filters_applied": {
                 "zone_id": zone_id, "year_from": year_from,
                 "year_to": year_to, "compare_by": compare_by,
@@ -56,6 +110,9 @@ def monthly_trend(
             "trend_direction": "stable",
             "months": [],
         }
+        if use_cache:
+            cache_set(cache_key, response)
+        return response
 
     count_map: dict[tuple, int] = {
         (r["year"], r["month"]): int(r["trip_count"]) for r in rows
@@ -93,7 +150,7 @@ def monthly_trend(
     else:
         trend = "stable"
 
-    return {
+    response = {
         "filters_applied": {
             "zone_id":    zone_id,
             "year_from":  year_from,
@@ -103,3 +160,7 @@ def monthly_trend(
         "trend_direction": trend,
         "months":          months_out,
     }
+
+    if use_cache:
+        cache_set(cache_key, response)
+    return response

@@ -2,6 +2,8 @@ from fastapi import APIRouter, Query, HTTPException
 from typing import Optional
 import grpc
 import os
+import json
+import redis
 
 from app.db.connection import get_conn
 from app import location_service_pb2, location_service_pb2_grpc
@@ -10,6 +12,29 @@ router = APIRouter()
 
 LOCATION_SERVICE_HOST = os.getenv("LOCATION_SERVICE_HOST", "location-api")
 LOCATION_SERVICE_PORT = os.getenv("LOCATION_SERVICE_PORT", "50054")
+REDIS_URL = os.getenv("REDIS_URL")
+CACHE_TTL_SECONDS = int(os.getenv("CACHE_TTL_SECONDS", "300"))
+
+redis_client = redis.from_url(REDIS_URL, decode_responses=True) if REDIS_URL else None
+
+
+def _cache_get(cache_key: str):
+    if not redis_client:
+        return None
+    try:
+        cached = redis_client.get(cache_key)
+        return json.loads(cached) if cached else None
+    except Exception:
+        return None
+
+
+def _cache_set(cache_key: str, value: dict) -> None:
+    if not redis_client:
+        return
+    try:
+        redis_client.setex(cache_key, CACHE_TTL_SECONDS, json.dumps(value))
+    except Exception:
+        pass
 
 
 def _get_location_stub():
@@ -28,6 +53,26 @@ def avg_fare_by_zone(
 ):
     if start_date and end_date and end_date < start_date:
         raise HTTPException(status_code=400, detail="end_date must be after start_date")
+
+    use_cache = (
+    zone_id is None and
+    start_date is None and
+    end_date is None
+    )
+
+    cache_key = (
+        f"revenue:avg-fare-by-zone:"
+        f"zone_type:{zone_type}:"
+        f"sort:{sort}:"
+        f"limit:{limit}:"
+        f"v1"
+    )
+    
+    if use_cache:
+        cached_response = _cache_get(cache_key)
+
+        if cached_response is not None:
+            return cached_response
 
     zone_col = "pickup_zone_id" if zone_type == "pickup" else "dropoff_zone_id"
 
@@ -82,7 +127,7 @@ def avg_fare_by_zone(
         raise HTTPException(status_code=500, detail=str(e))
 
     if not rows:
-        return {
+        response = {
             "filters_applied": {
                 "zone_type": zone_type, "zone_id": zone_id,
                 "start_date": start_date, "end_date": end_date,
@@ -91,8 +136,10 @@ def avg_fare_by_zone(
             "global_avg_fare": None,
             "zones": [],
         }
+        if use_cache:
+            _cache_set(cache_key, response)
+        return response
 
-    # ── gRPC ao Location Service — batch ─────────────────────────────────────
     zone_ids = [r["zone_id"] for r in rows]
     zone_info: dict[int, dict] = {}
 
@@ -104,11 +151,11 @@ def avg_fare_by_zone(
         )
         zone_info = {z.zone_id: {"zone_name": z.zone_name, "borough": z.borough} for z in grpc_response.zones}
     except grpc.RpcError:
-        pass  # se o location service falhar, devolve sem nomes
+        pass
 
     global_avg_fare = float(rows[0]["global_avg_fare"])
 
-    return {
+    response = {
         "filters_applied": {
             "zone_type":  zone_type,
             "zone_id":    zone_id,
@@ -131,3 +178,6 @@ def avg_fare_by_zone(
             for r in rows
         ],
     }
+    if use_cache:
+        _cache_set(cache_key, response)
+    return response

@@ -2,6 +2,8 @@ from fastapi import APIRouter, Query, HTTPException
 from typing import Optional
 import grpc
 import os
+import json
+import redis
 
 from app.db.connection import get_conn
 from app import location_service_pb2, location_service_pb2_grpc
@@ -10,6 +12,29 @@ router = APIRouter()
 
 LOCATION_SERVICE_HOST = os.getenv("LOCATION_SERVICE_HOST", "location-api")
 LOCATION_SERVICE_PORT = os.getenv("LOCATION_SERVICE_PORT", "50054")
+REDIS_URL = os.getenv("REDIS_URL")
+CACHE_TTL_SECONDS = int(os.getenv("CACHE_TTL_SECONDS", "300"))
+
+redis_client = redis.from_url(REDIS_URL, decode_responses=True) if REDIS_URL else None
+
+
+def _cache_get(cache_key: str):
+    if not redis_client:
+        return None
+    try:
+        cached = redis_client.get(cache_key)
+        return json.loads(cached) if cached else None
+    except Exception:
+        return None
+
+
+def _cache_set(cache_key: str, value: dict) -> None:
+    if not redis_client:
+        return
+    try:
+        redis_client.setex(cache_key, CACHE_TTL_SECONDS, json.dumps(value))
+    except Exception:
+        pass
 
 
 def _get_location_stub():
@@ -26,6 +51,20 @@ def revenue_breakdown(
 ):
     if start_date and end_date and end_date < start_date:
         raise HTTPException(status_code=400, detail="end_date must be after start_date")
+
+    use_cache = (
+    zone_id is None and
+    start_date is None and
+    end_date is None
+    )
+
+    cache_key = f"revenue:breakdown:zone_type:{zone_type}:v1"   
+
+    if use_cache:
+        cached_response = _cache_get(cache_key)
+
+        if cached_response is not None:
+            return cached_response
 
     zone_col = "pickup_zone_id" if zone_type == "pickup" else "dropoff_zone_id"
 
@@ -70,7 +109,7 @@ def revenue_breakdown(
 
     # ── gRPC ao Location Service (só se foi passado zone_id)
     zone_name = None
-    borough   = None
+    borough = None
     if zone_id is not None:
         try:
             stub = _get_location_stub()
@@ -79,22 +118,22 @@ def revenue_breakdown(
                 timeout=5,
             )
             zone_name = loc_response.zone_name or None
-            borough   = loc_response.borough   or None
+            borough = loc_response.borough or None
         except grpc.RpcError:
-            pass  
+            pass
 
     avg_total = float(row["avg_total"])
-    avg_fare  = float(row["avg_fare"])
-    avg_tip   = float(row["avg_tip"])
+    avg_fare = float(row["avg_fare"])
+    avg_tip = float(row["avg_tip"])
     avg_tolls = float(row["avg_tolls"])
-    avg_mta   = float(row["avg_mta"])
-    avg_sur   = float(row["avg_surcharge"])
+    avg_mta = float(row["avg_mta"])
+    avg_sur = float(row["avg_surcharge"])
     avg_extra = float(row["avg_extra"])
 
     def pct(val: float) -> float:
         return round(val / avg_total * 100, 2) if avg_total else 0.0
 
-    return {
+    response = {
         "filters_applied": {
             "zone_id":    zone_id,
             "zone_name":  zone_name,
@@ -106,11 +145,14 @@ def revenue_breakdown(
         "trip_count":       int(row["trip_count"]),
         "avg_total_amount": round(avg_total, 2),
         "breakdown": {
-            "fare_amount":           {"avg": round(avg_fare,  2), "percentage": pct(avg_fare)},
-            "tip_amount":            {"avg": round(avg_tip,   2), "percentage": pct(avg_tip)},
+            "fare_amount":           {"avg": round(avg_fare, 2), "percentage": pct(avg_fare)},
+            "tip_amount":            {"avg": round(avg_tip, 2), "percentage": pct(avg_tip)},
             "tolls_amount":          {"avg": round(avg_tolls, 2), "percentage": pct(avg_tolls)},
-            "mta_tax":               {"avg": round(avg_mta,   2), "percentage": pct(avg_mta)},
-            "improvement_surcharge": {"avg": round(avg_sur,   2), "percentage": pct(avg_sur)},
+            "mta_tax":               {"avg": round(avg_mta, 2), "percentage": pct(avg_mta)},
+            "improvement_surcharge": {"avg": round(avg_sur, 2), "percentage": pct(avg_sur)},
             "extra":                 {"avg": round(avg_extra, 2), "percentage": pct(avg_extra)},
         },
     }
+    if use_cache:
+        _cache_set(cache_key, response)
+    return response
