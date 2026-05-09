@@ -117,6 +117,7 @@ kubectl apply -f ~/kubernetesCloud/revenue-service/
 kubectl apply -f ~/kubernetesCloud/trip-service/
 kubectl apply -f ~/kubernetesCloud/payment-service/
 kubectl apply -f ~/kubernetesCloud/ingress.yaml
+kubectl apply -f ~/kubernetesCloud/redis.yaml
 ```
 
 ## 5 - Verificar os pods
@@ -169,12 +170,14 @@ pip3 install pandas sqlalchemy psycopg2-binary
 python3 seed.py
 ```
 
-## 7 - Verificar o HPA / Ingress
+## 7 - Verificar o HPA / Ingress / Redis 
 
 ```bash
 kubectl get hpa -n urbanpulse
 
 kubectl get ingress -n urbanpulse
+
+kubectl exec -it deploy/redis -n urbanpulse -- redis-cli ping
 ```
 
 Aguardar que o Ingress tenha um IP atribuído na coluna `ADDRESS`. Guardar esse IP — é necessário nos passos seguintes.
@@ -250,6 +253,13 @@ https://8001-cs-XXXXXXX-default.cs-europe-west1-haha.cloudshell.dev/docs?authuse
 
 > Substituir `XXXXXXX` pelo ID do vosso Cloud Shell (ex: `146652400283`). Este ID é encontrado se abrirem uma web preview.
 
+Depois de testar alguns endpoints onde o Redis foi implementado verificar o resultado do seguinte comando:
+
+```
+kubectl exec -it deploy/redis -n urbanpulse -- redis-cli KEYS '*'
+```
+Apenas deve de contar quando são chamados endpoints que estão definidos a usar cache do redis.
+
 ## 12 - Testar rollback
 
 ```bash
@@ -282,6 +292,7 @@ Verificar também em **Compute Engine → Disks** se ficaram discos órfãos e a
 | Revenue Service   | 8007 | 50055 | 5433              |
 | Prometheus        | 9090 | —     | —                 |
 | Grafana           | 3000 | —     | —                 |
+| Redis             | 6379 | —     | —                 |
 
 ## Imagens no Artifact Registry
 
