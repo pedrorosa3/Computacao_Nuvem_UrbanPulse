@@ -18,8 +18,8 @@ async def lifespan(app: FastAPI):
     print("🚀 Servidor gRPC do Payment Service a correr na porta 50052!")
     
     # INICIALIZAR O REDIS AQUI DENTRO!
-    redis = aioredis.from_url("redis://redis-service:6379")
-    FastAPICache.init(RedisBackend(redis), prefix="fastapi-cache")
+    redis = aioredis.from_url("redis://redis:6379")
+    FastAPICache.init(RedisBackend(redis), prefix="payment-cache")
     print("🚀 Cache Redis inicializada com sucesso!")
     
     yield
