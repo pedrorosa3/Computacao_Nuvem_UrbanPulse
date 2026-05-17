@@ -107,7 +107,19 @@ kubectl create configmap payment-db-init \
   -n urbanpulse
 ```
 
-## 4 - Aplicar os yamls
+## 4 - Aplicar os Secrets (credenciais das DBs)
+
+> Este passo tem de ser feito ANTES de aplicar os YAMLs dos deployments, para garantir que os pods conseguem ler as credenciais ao arrancar. Se os Secrets não existirem quando os pods iniciarem, ficam em `CreateContainerConfigError`.
+
+```bash
+kubectl apply -f ~/kubernetesCloud/location-service/location-secrets.yaml
+kubectl apply -f ~/kubernetesCloud/trip-service/trip-secrets.yaml
+kubectl apply -f ~/kubernetesCloud/demand-service/demand-secrets.yaml
+kubectl apply -f ~/kubernetesCloud/revenue-service/revenue-secrets.yaml
+kubectl apply -f ~/kubernetesCloud/payment-service/payment-secrets.yaml
+```
+
+## 5 - Aplicar os yamls
 
 ```bash
 kubectl apply -f ~/kubernetesCloud/location-service/
@@ -120,7 +132,7 @@ kubectl apply -f ~/kubernetesCloud/ingress.yaml
 kubectl apply -f ~/kubernetesCloud/redis.yaml
 ```
 
-## 5 - Verificar os pods
+## 6 - Verificar os pods (aguardar 1-2 minutos)
 
 Esperar 1-2 minutos antes de executar o comando, para dar tempo aos pods de iniciarem.
 
@@ -129,7 +141,7 @@ kubectl get pods -n urbanpulse
 # todos devem estar: 1/1 Running
 ```
 
-## 6 - Popular a base de dados (seed)
+## 7 - Popular a base de dados (seed)
 
 > Correr o seed DEPOIS dos pods estarem todos 1/1 Running, para garantir que as tabelas já foram criadas pelo init.sql.
 
@@ -170,7 +182,7 @@ pip3 install pandas sqlalchemy psycopg2-binary
 python3 seed.py
 ```
 
-## 7 - Verificar o HPA / Ingress / Redis 
+## 8 - Verificar o HPA / Ingress / Redis 
 
 ```bash
 kubectl get hpa -n urbanpulse
@@ -182,7 +194,7 @@ kubectl exec -it deploy/redis -n urbanpulse -- redis-cli ping
 
 Aguardar que o Ingress tenha um IP atribuído na coluna `ADDRESS`. Guardar esse IP — é necessário nos passos seguintes.
 
-## 8 - Deploy do Prometheus e Grafana
+## 9 - Deploy do Prometheus e Grafana
 
 > Este passo requer que o Ingress já tenha um IP atribuído (ver passo 7).
 
@@ -214,7 +226,7 @@ O GCE Load Balancer demora 3-5 minutos a propagar os novos backends. Após esse 
 - Prometheus: `http://<IP>/prometheus` → **Status → Targets** — os dois targets devem aparecer como `UP`
 - Grafana: `http://<IP>/grafana` — credenciais: utilizador `admin`, password `urbanpulse2026`
 
-## 9 - Configurar o Grafana
+## 10 - Configurar o Grafana
 
 A datasource do Prometheus já está configurada automaticamente. Para verificar:
 
@@ -226,7 +238,7 @@ Para criar um dashboard: **Dashboards → New → New dashboard → Add visualiz
 
 > **Nota:** Os dashboards criados manualmente no Grafana perdem-se quando o cluster é apagado.
 
-## 10 - Expor os serviços
+## 11 - Expor os serviços
 
 ```bash
 kubectl port-forward svc/location-api 8000:8000 -n urbanpulse &
@@ -237,7 +249,7 @@ kubectl port-forward svc/payment-svc 8006:8006 -n urbanpulse &
 kubectl port-forward svc/revenue-api 8007:8007 -n urbanpulse &
 ```
 
-## 11 - Testar os endpoints
+## 12 - Testar os endpoints
 
 Usar o Web Preview no Cloud Shell (ícone no topo) para testar. O `?authuser=2` deve estar sempre no fim do URL.
 
@@ -260,7 +272,7 @@ kubectl exec -it deploy/redis -n urbanpulse -- redis-cli KEYS '*'
 ```
 Apenas deve de contar quando são chamados endpoints que estão definidos a usar cache do redis.
 
-## 12 - Testar rollback
+## 13 - Testar rollback
 
 ```bash
 # Ver histórico de versões

@@ -18,11 +18,20 @@ spec:
           image: postgres:16-alpine
           env:
             - name: POSTGRES_USER
-              value: "urbanpulse"
+              valueFrom:
+                secretKeyRef:
+                  name: revenue-db-secrets
+                  key: username
             - name: POSTGRES_PASSWORD
-              value: "urbanpulse"
+              valueFrom:
+                secretKeyRef:
+                  name: revenue-db-secrets
+                  key: password
             - name: POSTGRES_DB
-              value: "revenue_db"
+              valueFrom:
+                secretKeyRef:
+                  name: revenue-db-secrets
+                  key: dbname
             - name: PGDATA
               value: /var/lib/postgresql/data/pgdata
           ports:
@@ -41,12 +50,12 @@ spec:
               mountPath: /docker-entrypoint-initdb.d
           livenessProbe:
             exec:
-              command: ["pg_isready", "-U", "urbanpulse", "-d", "revenue_db"]
+              command: ["pg_isready", "-U", "$(POSTGRES_USER)", "-d", "$(POSTGRES_DB)"]
             initialDelaySeconds: 30
             periodSeconds: 10
           readinessProbe:
             exec:
-              command: ["pg_isready", "-U", "urbanpulse", "-d", "revenue_db"]
+              command: ["pg_isready", "-U", "$(POSTGRES_USER)", "-d", "$(POSTGRES_DB)"]
             initialDelaySeconds: 5
             periodSeconds: 5
       volumes:
