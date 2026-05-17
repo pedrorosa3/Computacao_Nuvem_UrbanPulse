@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trip-api
+  namespace: urbanpulse
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: trip-api
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: trip-api
+    spec:
+      containers:
+        - name: trip-api
+          image: europe-west1-docker.pkg.dev/fc60250/urbanpulse/trip-api:latest
+          imagePullPolicy: Always
+          env:
+            - name: DB_HOST
+              value: "trip-db"
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_NAME
+              value: "trip_db"
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: trip-db-secrets
+                  key: username
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: trip-db-secrets
+                  key: password
+          ports:
+            - containerPort: 8001
+              name: rest
+            - containerPort: 50051
+              name: grpc
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          livenessProbe:
+            httpGet:
+              path: /trips/health
+              port: 8001
+            initialDelaySeconds: 15
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /trips/health
+              port: 8001
+            initialDelaySeconds: 5
+            periodSeconds: 10
