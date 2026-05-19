@@ -38,7 +38,7 @@ app = FastAPI(
 )
 
 # Inicializar o Prometheus
-Instrumentator().instrument(app).expose(app)
+Instrumentator().instrument(app).expose(app, endpoint="/payments/metrics", include_in_schema=False)
 
 app.include_router(payments.router, prefix="/payments", tags=["Payments"])
 

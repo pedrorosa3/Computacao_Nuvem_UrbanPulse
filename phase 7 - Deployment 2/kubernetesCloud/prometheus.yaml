@@ -18,6 +18,11 @@ data:
         static_configs:
           - targets: ['analytics-api:8003']
         metrics_path: '/analytics/metrics'
+
+      - job_name: 'payment-service'
+        static_configs:
+          - targets: ['payment-svc:8006']
+        metrics_path: '/payments/metrics'
 ---
 apiVersion: cloud.google.com/v1
 kind: BackendConfig
