@@ -20,3 +20,20 @@ def test_health_analytics():
     assert r.status_code == 200
     assert r.json()["status"] == "ok"
     assert r.json()["service"] == "analytics"
+
+
+# ── Endpoints de infra ────────────────────────────────────────────────────────
+
+def test_metrics_endpoint():
+    r = client.get("/analytics/metrics")
+    assert r.status_code == 200
+
+
+def test_openapi_endpoint():
+    r = client.get("/analytics/openapi.json")
+    assert r.status_code == 200
+
+
+def test_docs_endpoint():
+    r = client.get("/analytics/docs")
+    assert r.status_code == 200
