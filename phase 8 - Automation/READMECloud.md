@@ -121,6 +121,8 @@ kubectl apply -f ~/kubernetesCloud/payment-service/payment-secrets.yaml
 
 ## 5 - Aplicar os yamls
 
+> **Atenção:** O Prometheus e Grafana têm de ser aplicados AGORA juntamente com os outros serviços, mesmo que o IP do Ingress ainda não seja conhecido. O Ingress do GCE só atribui IP quando todos os serviços referenciados existem — se o Prometheus ou Grafana não existirem, o Ingress fica bloqueado sem IP indefinidamente.
+
 ```bash
 kubectl apply -f ~/kubernetesCloud/location-service/
 kubectl apply -f ~/kubernetesCloud/analytics-service/
@@ -130,6 +132,8 @@ kubectl apply -f ~/kubernetesCloud/trip-service/
 kubectl apply -f ~/kubernetesCloud/payment-service/
 kubectl apply -f ~/kubernetesCloud/ingress.yaml
 kubectl apply -f ~/kubernetesCloud/redis.yaml
+kubectl apply -f ~/kubernetesCloud/prometheus.yaml
+kubectl apply -f ~/kubernetesCloud/grafana.yaml
 ```
 
 ## 6 - Verificar os pods (aguardar 1-2 minutos)
@@ -182,7 +186,7 @@ pip3 install pandas sqlalchemy psycopg2-binary
 python3 seed.py
 ```
 
-## 8 - Verificar o HPA / Ingress / Redis 
+## 8 - Verificar o HPA / Ingress / Redis
 
 ```bash
 kubectl get hpa -n urbanpulse
@@ -192,22 +196,29 @@ kubectl get ingress -n urbanpulse
 kubectl exec -it deploy/redis -n urbanpulse -- redis-cli ping
 ```
 
-Aguardar que o Ingress tenha um IP atribuído na coluna `ADDRESS`. Guardar esse IP — é necessário nos passos seguintes.
+Aguardar que o Ingress tenha um IP atribuído na coluna `ADDRESS`. Guardar esse IP — é necessário nos passos seguintes. Este IP pode demorar vários minutos a aparecer.
 
-## 9 - Deploy do Prometheus e Grafana
+## 9 - Actualizar o IP no Prometheus e Grafana
 
-> Este passo requer que o Ingress já tenha um IP atribuído (ver passo 8).
+> O Prometheus e o Grafana já foram aplicados no passo 5. Agora que o Ingress tem IP, é necessário actualizar esse IP nos ficheiros e reaplicar — caso contrário o Prometheus e o Grafana não funcionam correctamente.
 
-**Atenção:** O `prometheus.yaml` contém o IP do Ingress hardcoded no argumento `--web.external-url`. Sempre que o cluster for recriado, o IP pode mudar. Nesse caso, atualizar o ficheiro antes de aplicar:
+Atualizar o IP nos dois ficheiros:
 
 ```yaml
 # Em prometheus.yaml, dentro do Deployment:
 args:
-  - "--web.external-url=http://<NOVO_IP>/prometheus" # <- atualizar aqui
+  - "--web.external-url=http://<IP_DO_INGRESS>/prometheus" # <- atualizar aqui
   - "--web.route-prefix=/prometheus"
 ```
 
-Aplicar o Prometheus e o Grafana:
+```yaml
+# Em grafana.yaml, dentro do Deployment:
+env:
+  - name: GF_SERVER_ROOT_URL
+    value: "http://<IP_DO_INGRESS>/grafana" # <- atualizar aqui
+```
+
+Reaplicar os dois ficheiros:
 
 ```bash
 kubectl apply -f ~/kubernetesCloud/prometheus.yaml
@@ -270,6 +281,7 @@ Depois de testar alguns endpoints onde o Redis foi implementado verificar o resu
 ```
 kubectl exec -it deploy/redis -n urbanpulse -- redis-cli KEYS '*'
 ```
+
 Apenas deve de contar quando são chamados endpoints que estão definidos a usar cache do redis.
 
 ## 13 - Testar rollback

@@ -1,75 +1,40 @@
-import psycopg2
-import pandas as pd
-import sys
 import os
+import pandas as pd
+from sqlalchemy import create_engine, text
 
 # ── Config ───────────────────────────────────────────────────────────────────
-DB_CONFIG = {
-    "host":     "localhost",
-    "port":     5434,
-    "dbname":   "demand_db",
-    "user":     "urbanpulse",
-    "password": "urbanpulse",
-}
+DATABASE_URL = "postgresql://urbanpulse:urbanpulse@localhost:5434/demand_db"
+engine = create_engine(DATABASE_URL)
 
-TRIPS_CSV = os.path.join(os.path.expanduser("~"), "yellow_tripdata_2015-01_clean.csv")
-# Limite de viagens para testes (remover para inserir tudo)
+TRIPS_CSV   = os.path.join(os.path.expanduser("~"), "yellow_tripdata_2015-01_clean.csv")
 SAMPLE_ROWS = 10000
 
-# ── Ligação ───────────────────────────────────────────────────────────────────
-print("A ligar à base de dados...")
-try:
-    conn = psycopg2.connect(**DB_CONFIG)
-    cur = conn.cursor()
-    print("  → Ligado com sucesso")
-except Exception as e:
-    print(f"  → Erro ao ligar: {e}")
-    sys.exit(1)
-
 # ── Trips ─────────────────────────────────────────────────────────────────────
-print(f"\nA carregar viagens de '{TRIPS_CSV}'...")
+print(f"A carregar viagens de '{TRIPS_CSV}'...")
 trips = pd.read_csv(TRIPS_CSV, usecols=[
     "tpep_pickup_datetime",
     "pickup_zone_id",
 ], nrows=SAMPLE_ROWS)
 
 trips = trips.dropna(subset=["pickup_zone_id", "tpep_pickup_datetime"])
-trips["pickup_zone_id"]  = trips["pickup_zone_id"].astype(int)
-trips["pickup_datetime"] = pd.to_datetime(trips["tpep_pickup_datetime"])
+trips["pickup_zone_id"]       = trips["pickup_zone_id"].astype(int)
+trips["pickup_datetime"]      = pd.to_datetime(trips["tpep_pickup_datetime"])
+trips["pickup_year"]          = trips["pickup_datetime"].dt.year
+trips["pickup_month"]         = trips["pickup_datetime"].dt.month
+trips["pickup_day_of_week"]   = trips["pickup_datetime"].dt.dayofweek
+trips["pickup_hour"]          = trips["pickup_datetime"].dt.hour
 
-# Pré-calcular colunas derivadas
-trips["pickup_year"]        = trips["pickup_datetime"].dt.year
-trips["pickup_month"]       = trips["pickup_datetime"].dt.month
-trips["pickup_day_of_week"] = trips["pickup_datetime"].dt.dayofweek  # 0=Segunda, 6=Domingo
-trips["pickup_hour"]        = trips["pickup_datetime"].dt.hour
+with engine.connect() as conn:
+    conn.execute(text("TRUNCATE TABLE trips RESTART IDENTITY;"))
+    conn.commit()
 
-cur.execute("TRUNCATE TABLE trips RESTART IDENTITY;")
-
-BATCH_SIZE = 1000
-records = list(trips[[
+df_insert = trips[[
     "pickup_zone_id", "pickup_datetime",
     "pickup_year", "pickup_month",
     "pickup_day_of_week", "pickup_hour"
-]].itertuples(index=False, name=None))
+]]
 
-for i in range(0, len(records), BATCH_SIZE):
-    batch = records[i:i + BATCH_SIZE]
-    cur.executemany(
-        """
-        INSERT INTO trips (
-            pickup_zone_id, pickup_datetime,
-            pickup_year, pickup_month,
-            pickup_day_of_week, pickup_hour
-        )
-        VALUES (%s, %s, %s, %s, %s, %s);
-        """,
-        batch
-    )
-    conn.commit()
-    print(f"  → {min(i + BATCH_SIZE, len(records))}/{len(records)} viagens inseridas", end="\r")
-
-print(f"\n  → {len(records)} viagens inseridas no total")
-
-cur.close()
-conn.close()
-print("\nConcluído!")
+print("A inserir dados...")
+df_insert.to_sql("trips", engine, if_exists="append", index=False)
+print(f"  → {len(df_insert)} viagens inseridas no total")
+print("Concluído!")
