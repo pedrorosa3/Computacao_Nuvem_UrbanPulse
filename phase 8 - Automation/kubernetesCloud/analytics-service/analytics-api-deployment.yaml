@@ -31,6 +31,8 @@ spec:
               value: "payment-svc:50052"
             - name: REVENUE_SERVICE_URL
               value: "revenue-api:50055"
+            - name: TRIP_SERVICE_URL
+              value: "trip-api:50051"
           ports:
             - containerPort: 8003
               name: rest
