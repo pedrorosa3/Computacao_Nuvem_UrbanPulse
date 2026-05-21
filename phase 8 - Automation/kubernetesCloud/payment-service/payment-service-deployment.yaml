@@ -39,6 +39,8 @@ spec:
                   key: password
             - name: DATABASE_URL
               value: "postgresql://$(DB_USER):$(DB_PASSWORD)@payment-db:5432/payment_db"
+            - name: TRIP_SERVICE_URL
+              value: "trip-api:50051"
           resources:
             requests:
               cpu: "100m"

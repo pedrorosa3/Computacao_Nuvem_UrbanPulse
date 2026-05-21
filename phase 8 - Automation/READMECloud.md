@@ -223,7 +223,7 @@ kubectl get pods -n urbanpulse | grep -E "prometheus|grafana"
 
 O GCE Load Balancer demora 3-5 minutos a propagar os novos backends. Após esse tempo, aceder a:
 
-- Prometheus: `http://<IP>/prometheus` → **Status → Targets** — os dois targets devem aparecer como `UP`
+- Prometheus: `http://<IP>/prometheus` → **Status → Targets** — os três targets (`location-api`, `analytics-api`, `payment-service`) devem aparecer como `UP`
 - Grafana: `http://<IP>/grafana` — credenciais: utilizador `admin`, password `urbanpulse2026`
 
 ## 10 - Configurar o Grafana

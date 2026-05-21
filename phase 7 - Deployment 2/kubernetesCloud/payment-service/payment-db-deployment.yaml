@@ -43,6 +43,8 @@ spec:
           volumeMounts:
             - name: payment-db-storage
               mountPath: /var/lib/postgresql/data
+            - name: payment-db-init
+              mountPath: /docker-entrypoint-initdb.d
           livenessProbe:
             exec:
               command: ["pg_isready", "-U", "$(POSTGRES_USER)", "-d", "payment_db"]
@@ -57,3 +59,6 @@ spec:
         - name: payment-db-storage
           persistentVolumeClaim:
             claimName: payment-db-pvc
+        - name: payment-db-init
+          configMap:
+            name: payment-db-init
