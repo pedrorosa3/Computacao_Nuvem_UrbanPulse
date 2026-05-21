@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 from sqlalchemy import create_engine, text
 
@@ -34,8 +35,10 @@ with engine.connect() as conn:
         conn.commit()
         print("Tabela limpa, pronta para novo seed.")
 
+TRIPS_CSV = os.path.join(os.path.expanduser("~"), "yellow_tripdata_2015-01_clean.csv")
+
 print("A ler o dataset...")
-df = pd.read_csv("/home/pedromjrosa333/yellow_tripdata_2015-01_clean.csv", nrows=10000)
+df = pd.read_csv(TRIPS_CSV, nrows=10000)
 
 payment_map = {1: 'card', 2: 'cash', 3: 'no_charge', 4: 'dispute', 5: 'unknown', 6: 'voided'}
 df['payment_type'] = df['payment_type'].map(payment_map).fillna('unknown')
