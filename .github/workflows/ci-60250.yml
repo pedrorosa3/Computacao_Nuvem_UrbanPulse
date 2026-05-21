@@ -77,8 +77,8 @@ jobs:
         working-directory: "phase 8 - Automation/MicroServices/analytics-service"
         run: pytest tests.py --junitxml=junit/test-results-analytics.xml --cov=app --cov-report=xml --cov-report=html
 
-  staging-test:
-    name: Staging Tests
+  pr-test:
+    name: Pull Request Tests
     runs-on: ubuntu-latest
     needs: unit-test
     if: github.event_name == 'pull_request'
@@ -97,9 +97,9 @@ jobs:
           pip install -r requirements.txt
           pip install pytest pytest-cov httpx
 
-      - name: Staging Tests — Location Service
+      - name: Pull Request Tests — Location Service
         working-directory: "phase 8 - Automation/MicroServices/location-service"
-        run: pytest tests_staging.py --junitxml=junit/test-results-location-staging.xml --cov=app --cov-report=xml --cov-report=html
+        run: pytest tests_pr.py --junitxml=junit/test-results-location-staging.xml --cov=app --cov-report=xml --cov-report=html
 
       - name: Install Analytics Service dependencies
         working-directory: "phase 8 - Automation/MicroServices/analytics-service"
@@ -108,9 +108,9 @@ jobs:
           pip install -r requirements.txt
           pip install pytest pytest-cov httpx
 
-      - name: Staging Tests — Analytics Service
+      - name: Pull Request Tests — Analytics Service
         working-directory: "phase 8 - Automation/MicroServices/analytics-service"
-        run: pytest tests_staging.py --junitxml=junit/test-results-analytics-staging.xml --cov=app --cov-report=xml --cov-report=html
+        run: pytest tests_pr.py --junitxml=junit/test-results-analytics-staging.xml --cov=app --cov-report=xml --cov-report=html
 
   integration-test:
     name: Integration Tests
