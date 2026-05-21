@@ -20,4 +20,6 @@ Thumbs.db
 secrets.yaml
 
 *.csv
+!phase 8 - Automation/test-data/test_trips.csv
+!phase 8 - Automation/test-data/taxi_zone_lookup.csv
 claude.md
