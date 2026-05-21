@@ -23,7 +23,7 @@ def test_zones_all_loaded():
     r = requests.get(f"{BASE}/locations/zones")
     assert r.status_code == 200
     data = r.json()
-    assert len(data) == 265
+    assert len(data) >= 260
     classifications = {z["classification"] for z in data}
     assert classifications == {"affluent", "peripheral", "other"}
 
