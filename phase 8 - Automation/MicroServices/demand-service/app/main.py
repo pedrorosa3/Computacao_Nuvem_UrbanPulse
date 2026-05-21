@@ -14,10 +14,12 @@ async def lifespan(app: FastAPI):
     grpc_server_instance.stop(0)
 
 app = FastAPI(
+    docs_url="/demand/docs",
+    openapi_url="/demand/openapi.json",
     title="UrbanPulse – Demand Service API",
     description="Historical demand analysis of NYC Yellow Taxi trip data.",
     version="1.0.0",
-    lifespan=lifespan # <--- Adicionar esta linha aqui!
+    lifespan=lifespan,
 )
 
 app.include_router(hourly_matrix.router,  prefix="/demand")

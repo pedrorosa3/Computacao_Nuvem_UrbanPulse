@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
+from .routers import payments
 from .grpc_server import serve_grpc
 from redis import asyncio as aioredis
 from fastapi_cache import FastAPICache
@@ -35,6 +36,8 @@ app = FastAPI(
 )
 
 Instrumentator().instrument(app).expose(app, endpoint="/payments/metrics", include_in_schema=False)
+
+app.include_router(payments.router, prefix="/payments", tags=["Payments"])
 
 
 @app.get("/")
