@@ -67,8 +67,8 @@ gcloud artifacts docker images list europe-west1-docker.pkg.dev/fc60250/urbanpul
 ```bash
 gcloud container clusters create urbanpulse \
   --zone=europe-west1-b \
-  --num-nodes=4 \
-  --machine-type=e2-small \
+  --num-nodes=5 \
+  --machine-type=e2-medium \
   --disk-size=20 \
   --no-enable-autoupgrade
 ```
@@ -130,10 +130,15 @@ kubectl apply -f ~/kubernetesCloud/demand-service/
 kubectl apply -f ~/kubernetesCloud/revenue-service/
 kubectl apply -f ~/kubernetesCloud/trip-service/
 kubectl apply -f ~/kubernetesCloud/payment-service/
-kubectl apply -f ~/kubernetesCloud/ingress.yaml
 kubectl apply -f ~/kubernetesCloud/redis.yaml
 kubectl apply -f ~/kubernetesCloud/prometheus.yaml
 kubectl apply -f ~/kubernetesCloud/grafana.yaml
+
+# Verificar que todos os serviços existem antes de aplicar o Ingress
+kubectl get svc -n urbanpulse
+# Devem aparecer 14 serviços incluindo prometheus e grafana
+
+kubectl apply -f ~/kubernetesCloud/ingress.yaml
 ```
 
 ## 6 - Verificar os pods (aguardar 1-2 minutos)
