@@ -196,7 +196,7 @@ Aguardar que o Ingress tenha um IP atribuído na coluna `ADDRESS`. Guardar esse 
 
 ## 9 - Deploy do Prometheus e Grafana
 
-> Este passo requer que o Ingress já tenha um IP atribuído (ver passo 7).
+> Este passo requer que o Ingress já tenha um IP atribuído (ver passo 8).
 
 **Atenção:** O `prometheus.yaml` contém o IP do Ingress hardcoded no argumento `--web.external-url`. Sempre que o cluster for recriado, o IP pode mudar. Nesse caso, atualizar o ficheiro antes de aplicar:
 
