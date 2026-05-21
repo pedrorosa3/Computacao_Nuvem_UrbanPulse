@@ -1,170 +1,174 @@
 # Phase 8 — CI/CD com GitHub Actions
 
-## Objetivo da fase
+## O que foi implementado (60250 — Diogo Sousa)
 
-Criar um pipeline de CI/CD que corra automaticamente quando há alterações ao código, garantindo que o código está correto antes de ser integrado na branch principal. O pipeline deve demonstrar a aplicação de **vários tipos de testes em diferentes fases** do desenvolvimento.
+Foi criado um pipeline de CI/CD com **3 stages** para o **Location Service** e o **Analytics Service**. O pipeline corre automaticamente no GitHub Actions sempre que há alterações ao código, sem precisar de correr nada manualmente.
 
-O professor vai prestar atenção à qualidade e variedade dos testes — não é necessário cobertura total, mas os testes têm de ser reais e demonstrar que percebem o que estão a testar.
-
----
-
-## Estrutura do pipeline — 3 stages
-
-O pipeline tem 3 momentos distintos, cada um com um trigger e um propósito diferente:
-
-```
-Push para branch individual  →  Stage 1 (lint + unit tests)
-Pull Request para main        →  Stage 2 (staging tests)
-Push para main                →  Stage 3 (integration tests + build imagem)
-```
+O ficheiro do pipeline está em `.github/workflows/ci-60250.yml`.
 
 ---
 
-## Stage 1 — Unit Tests
+## Como funciona o pipeline
 
-**Trigger:** push para o vosso branch individual (ex: `60250`, `60252`, etc.)
+O pipeline tem 3 triggers diferentes, cada um com um propósito distinto:
 
-**Propósito:** verificar rapidamente que o código está correto antes de partilhar com o grupo. Corre em cada push do dia-a-dia.
+```
+Push para branch 60250  →  Stage 1: Lint + Unit Tests
+Pull Request para main  →  Stage 2: Pull Request Tests
+Push para main          →  Stage 3: Integration Tests
+```
 
-**O que deve conter:**
+---
+
+## Stage 1 — Lint + Unit Tests
+
+**Trigger:** push para o branch individual (`60250`)
+
+**Para que serve:** verificação rápida do dia-a-dia. Corre em segundos e dá feedback imediato durante o desenvolvimento.
 
 **Job 1 — Lint** (corre primeiro, bloqueia os testes se falhar):
-- Instalar `flake8`
-- Correr com `--select=E9,F63,F7,F82` — só erros críticos de sintaxe que impedem o código de correr
-- Correr com `--exit-zero --max-line-length=127` — avisos de estilo, não bloqueia
 
-**Job 2 — Unit Tests** (só corre se o lint passou):
-- Instalar dependências do serviço + `pytest`, `pytest-cov`, `httpx`
-- Correr `pytest tests.py --cov=app`
+- Verifica erros críticos de sintaxe no código do Location e Analytics (variáveis não definidas, imports inválidos, etc.)
+- Se encontrar um erro crítico, o pipeline para — os testes não chegam a correr
+- Verifica também avisos de estilo mas não bloqueia (só informa)
 
-**Tipos de testes a incluir no `tests.py`:**
-- **Health** — verificar que `/health` devolve 200 e `{"status": "ok"}`
-- **Validação de input** — parâmetros inválidos devolvem 400 ou 422 (sem precisar de BD)
-- **Lógica pura** — testar directamente funções Python que não dependem de nada externo (ex: funções de classificação, cálculos matemáticos)
-- **Endpoint com BD simulada** — usar `unittest.mock.patch` para substituir as chamadas à BD por dados fictícios e verificar que o endpoint formata bem a resposta
+**Job 2 — Unit Tests** (só corre se o Lint passou):
 
-**Exemplo de teste com BD simulada:**
+- Testa funções isoladas, sem base de dados nem serviços externos
+- Usa `unittest.mock` para simular as dependências
+- Exemplos do que é testado:
+  - `_classify_volatility(0.3) == "low"` — função matemática pura
+  - `GET /locations/pickup/ranking?start_date=2015-01-31&end_date=2015-01-01` devolve 400 — validação sem BD
+  - `GET /locations/pickup/ranking` com BD simulada — verifica que o JSON está correcto
+
+**Ficheiros de testes:** `tests.py` em cada serviço
+
+---
+
+## Stage 2 — Pull Request Tests
+
+**Trigger:** abertura de Pull Request para `main`
+
+**Para que serve:** verificação mais abrangente antes de integrar o código na branch principal. Cobre mais endpoints e cenários de erro do que os unit tests.
+
+**O que diferencia dos Unit Tests:**
+
+- Cobre endpoints que não estão nos unit tests (ex: `/locations/{id}/dropoffs`, `/locations/pairs`)
+- Testa cenários de erro mais complexos (ex: o que acontece quando um serviço gRPC está em baixo → deve devolver 503)
+- Testa degradação graciosa (ex: Revenue Service falha mas o endpoint continua a responder)
+- Continua a usar mocks — não precisa de serviços reais
+
+**Exemplos do que é testado:**
+
+- `classify_zone("Bronx", "Boro Zone") == "peripheral"` — função pura
+- `GET /locations/9999/dropoffs` devolve 404 (BD simulada a devolver lista vazia)
+- `GET /analytics/mobility-comparison` quando Location gRPC falha → 503
+- `GET /analytics/anomalous-trips` quando Revenue falha → continua sem dados de receita
+
+**Ficheiros de testes:** `tests_pr.py` em cada serviço
+
+---
+
+## Stage 3 — Integration Tests
+
+**Trigger:** push para `main` (após merge de PR)
+
+**Para que serve:** verificar que o sistema funciona de verdade com infraestrutura real. Sem mocks — base de dados PostgreSQL real, gRPC real entre serviços.
+
+**Como funciona:**
+
+1. Sobe os 6 microservices + 5 BDs + Redis com Docker Compose (`docker-compose-test.yml`)
+2. Aguarda 60 segundos para as BDs iniciarem
+3. Corre os seeds de todos os serviços (insere dados de teste reais)
+4. Corre os testes contra os serviços reais via HTTP
+5. Destrói os containers
+
+**O que verifica:**
+
+- Todos os 6 serviços arrancam correctamente
+- Os endpoints do Location Service devolvem dados reais da BD
+- O Analytics Service agrega dados reais de todos os outros via gRPC:
+  - `demand is not None` → Demand Service respondeu
+  - `card_payment_pct is not None` → Payment Service respondeu
+  - `avg_fare is not None` → Revenue Service respondeu
+  - `revenue_service_used is True` → Revenue respondeu nos anomalous trips
+- Comunicação gRPC Location → Demand funciona (`demand_patterns` no zone profile)
+
+**Ficheiros de testes:** `tests_integration/` na raiz da pasta phase 8
+
+**Dados de teste:** `test-data/test_trips.csv` (5000 linhas) e `test-data/taxi_zone_lookup.csv` (265 zonas) — commitados no repositório para o pipeline funcionar sem CSV externo.
+
+---
+
+## O que precisam fazer
+
+Para adicionar o vosso serviço ao pipeline, são necessárias **3 alterações**:
+
+### 1. Criar `tests.py` no vosso serviço (Unit Tests)
+
+Colocar em `phase 8 - Automation/MicroServices/[vosso-servico]/tests.py`.
+
+O que deve incluir:
+
+- Testes de health (`GET /health` → 200)
+- Testes de validação de input (datas inválidas → 400, parâmetros fora do intervalo → 422)
+- Testes de funções puras (se existirem)
+- Pelo menos um teste com BD simulada usando `unittest.mock.patch`
+
+Exemplo de teste com BD simulada:
+
 ```python
 from unittest.mock import patch
+from fastapi.testclient import TestClient
+from app.main import app
 
-def test_meu_endpoint(client):
-    mock_dados = [{"id": 1, "nome": "Exemplo"}]
+client = TestClient(app)
+
+def test_meu_endpoint():
+    mock_dados = [{"id": 1, "valor": 42}]
     with patch("app.routers.meu_router.execute_query", return_value=mock_dados):
         r = client.get("/meu/endpoint")
     assert r.status_code == 200
-    assert r.json()[0]["nome"] == "Exemplo"
+    assert r.json()[0]["valor"] == 42
 ```
 
----
+### 2. Criar `tests_pr.py` no vosso serviço (Pull Request Tests)
 
-## Stage 2 — Staging Tests
+Mesma localização. Deve cobrir mais cenários do que o `tests.py`:
 
-**Trigger:** Pull Request para `main`
+- Mais endpoints
+- Cenários de erro (404, 503)
+- Se o serviço chama outros via gRPC: testar o que acontece quando falham
 
-**Propósito:** nível de qualidade mais exigente antes de integrar na branch principal. Testa como os componentes trabalham em conjunto e como o sistema se comporta quando algo corre mal.
+### 3. Adicionar o vosso serviço ao workflow
 
-**Configuração no workflow:**
+No ficheiro `.github/workflows/ci-NUMERO.yml` (substituir NUMERO pelo número de aluno), adicionar steps para o vosso serviço nos jobs `unit-test` e `pr-test`:
+
 ```yaml
-staging-test:
-  needs: unit-test
-  if: github.event_name == 'pull_request'
-```
-
-**Tipos de testes a incluir no `tests_staging.py`:**
-- **Mais endpoints cobertos** — endpoints que não estão nos unit tests, com BD simulada
-- **Cenários de erro** — o que acontece quando um serviço gRPC está em baixo (deve devolver 503, não crashar)
-- **Degradação graciosa** — quando um serviço secundário falha, o endpoint continua a responder com os dados que tem
-- **Estrutura completa da resposta** — verificar todos os campos da resposta, não só o status code
-- **Múltiplas dependências mockadas em simultâneo** — endpoints que chamam vários serviços gRPC
-
-**Exemplo de teste de erro gRPC:**
-```python
-import grpc
-from unittest.mock import patch
-
-class MockRpcError(grpc.RpcError):
-    def code(self):    return grpc.StatusCode.UNAVAILABLE
-    def details(self): return "Service unavailable"
-
-def test_endpoint_servico_em_baixo_returns_503(client):
-    with patch("app.routers.meu_router._get_dados_grpc", side_effect=MockRpcError()):
-        r = client.get("/meu/endpoint")
-    assert r.status_code == 503
-```
-
----
-
-## Stage 3 — Integration Tests + Build
-
-**Trigger:** push para `main` (após merge do PR)
-
-**Propósito:** testes de integração reais e construção automática da imagem Docker. É aqui que entra o CD (Continuous Delivery ou Continuous Deployment).
-
-**O que deve conter:**
-
-**Testes de integração** — diferença chave para os stages anteriores: os serviços comunicam entre si via gRPC de forma real, ou com uma base de dados real levantada no GitHub Actions:
-```yaml
-services:
-  postgres:
-    image: postgres:16-alpine
-    env:
-      POSTGRES_DB: location_db
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: test
-    ports:
-      - 5432:5432
-```
-
-**Build e push da imagem Docker** — após os testes passarem, construir a imagem e fazer push para o Artifact Registry:
-```yaml
-- name: Autenticar no GCP
-  uses: google-github-actions/auth@v1
-  with:
-    credentials_json: ${{ secrets.GCP_SA_KEY }}
-
-- name: Configurar Docker
-  run: gcloud auth configure-docker europe-west1-docker.pkg.dev
-
-- name: Build e push
+- name: Install [Serviço] dependencies
+  working-directory: "phase 8 - Automation/MicroServices/[vosso-servico]"
   run: |
-    docker build -t europe-west1-docker.pkg.dev/SEU_PROJETO/urbanpulse/SEU_SERVICO:latest .
-    docker push europe-west1-docker.pkg.dev/SEU_PROJETO/urbanpulse/SEU_SERVICO:latest
-```
+    python -m pip install --upgrade pip
+    pip install -r requirements.txt
+    pip install pytest pytest-cov httpx
 
-Para o build funcionar, cada um precisa de:
-1. Criar uma **Service Account** no GCP com o role `Artifact Registry Writer`
-2. Descarregar o JSON das credenciais
-3. Guardar o JSON como GitHub Secret com o nome `GCP_SA_KEY` (Settings → Secrets → Actions)
-
----
-
-## Estrutura de ficheiros esperada por serviço
-
-```
-MicroServices/
-└── meu-servico/
-    ├── app/
-    ├── requirements.txt
-    ├── Dockerfile
-    ├── tests.py           ← Stage 1 (unit tests)
-    └── tests_staging.py   ← Stage 2 (staging tests)
-
-.github/
-└── workflows/
-    └── ci-NUMERO.yml      ← workflow do vosso número de aluno
+- name: Test [Serviço]
+  working-directory: "phase 8 - Automation/MicroServices/[vosso-servico]"
+  run: pytest tests.py --junitxml=junit/test-results.xml --cov=app --cov-report=xml
 ```
 
 ---
 
-## Notas importantes
+## Serviços com gRPC no startup (Só para os primeiros 2 stages, nos integration tests NÃO HÁ mocks)
 
-- **Cada aluno tem o seu próprio workflow** — o ficheiro deve chamar-se `ci-NUMERO.yml` com o vosso número de aluno, e o trigger deve ser o vosso branch individual
-- **Não é necessário cobertura total** — o professor quer ver variedade de tipos de testes, não quantidade
-- **O lint não deve falhar por estilo** — usem `continue-on-error: true` no segundo passo do flake8 para que avisos de formatação não bloqueiem o pipeline
-- **O `TestClient` não precisa de servidor** — o FastAPI corre em memória durante os testes, não é preciso ter nenhum serviço a correr
-- **Serviços com gRPC no startup** — se o vosso serviço arranca um servidor gRPC no lifespan, é preciso mockar isso antes de usar o `TestClient`:
+Se o vosso serviço arranca um servidor gRPC no `lifespan` do FastAPI (como o Location Service), é necessário mockar o startup nos testes para evitar erro ao inicializar o TestClient:
 
 ```python
+import pytest
+from unittest.mock import patch, MagicMock
+from fastapi.testclient import TestClient
+from app.main import app
+
 @pytest.fixture(scope="session", autouse=True)
 def mock_grpc_server():
     with patch("app.grpc_server.serve_grpc", return_value=MagicMock(stop=MagicMock())):
@@ -175,3 +179,15 @@ def client(mock_grpc_server):
     with TestClient(app) as c:
         yield c
 ```
+
+---
+
+## Notas importantes
+
+- **Cada aluno deve ter o seu próprio workflow** — o ficheiro deve chamar-se `ci-NUMERO.yml` com o número de aluno, e o trigger deve ser o branch individual
+- **Os testes de integração (Stage 3) não usam mocks** — o professor confirmou que integration tests com mocks não são integration tests. O Stage 3 usa serviços Docker reais
+- **Os testes de Stage 1 e 2 podem usar mocks** — são unit tests / PR tests, não integration tests
+- **Os dados de teste estão em `test-data/`** — o `test_trips.csv` (5000 linhas) e o `taxi_zone_lookup.csv` são usados pelos seeds no Stage 3. O `.gitignore` tem excepções para estes dois ficheiros específicos
+- **O seed do Demand precisa de `seed_extra.py`** para popular dados de tendências mensais — correr manualmente depois do `seed.py` se necessário
+
+# Ainda falta a parte de CD, que é atualizar automaticamente as images do artifact registry.
