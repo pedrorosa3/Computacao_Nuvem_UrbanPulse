@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: revenue-api
+  namespace: urbanpulse
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: revenue-api
+  template:
+    metadata:
+      labels:
+        app: revenue-api
+    spec:
+      containers:
+        - name: revenue-api
+          image: revenue-api:latest
+          imagePullPolicy: Never  # usar imagem local (mudar para Always no GKE)
+          env:
+            - name: DATABASE_URL
+              value: postgresql://urbanpulse:urbanpulse@revenue-db:5432/revenue_db
+            - name: TRIP_SERVICE_URL
+              value: trip-api:50051
+          ports:
+            - containerPort: 8007
+            - containerPort: 50055
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8007
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8007
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"

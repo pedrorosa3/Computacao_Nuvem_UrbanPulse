@@ -1,0 +1,228 @@
+openapi: 3.0.3
+info:
+  title: UrbanPulse – Demand Service API
+  description: >
+    REST API for historical demand analysis of NYC Yellow Taxi trip data.
+    Provides temporal and geographic demand patterns for urban mobility analytics.
+  version: 1.0.0
+
+paths:
+
+  /demand/hourly-matrix:
+    get:
+      summary: UC15 – Trip count matrix by hour and day of week
+      description: >
+        Returns a matrix of trip counts indexed by hour of day (0–23) and day of week
+        (0=Monday, 6=Sunday). Peak hours are flagged based on deviation from the
+        overall average. By default returns global data across all zones.
+        Can be filtered by zone, year and month.
+      parameters:
+        - name: zone_id
+          in: query
+          required: false
+          description: Filter by pickup zone ID (if omitted, returns global data)
+          schema:
+            type: integer
+            example: 161
+        - name: year
+          in: query
+          required: false
+          description: Filter by year (e.g. 2015)
+          schema:
+            type: integer
+            example: 2015
+        - name: month
+          in: query
+          required: false
+          description: Filter by month (1-12)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+            example: 6
+      responses:
+        '200':
+          description: Trip count matrix by hour and day of week with peak hour flags
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  filters_applied:
+                    type: object
+                    properties:
+                      zone_id:
+                        type: integer
+                        nullable: true
+                        example: 161
+                      year:
+                        type: integer
+                        nullable: true
+                        example: 2015
+                      month:
+                        type: integer
+                        nullable: true
+                        example: 6
+                  overall_avg_trips:
+                    type: number
+                    format: float
+                    description: Overall average trip count across all hours and days
+                    example: 1250.5
+                  matrix:
+                    type: array
+                    description: Array of 7 days, each with 24 hourly entries
+                    items:
+                      type: object
+                      properties:
+                        day_of_week:
+                          type: integer
+                          description: 0=Monday, 6=Sunday
+                          example: 0
+                        day_name:
+                          type: string
+                          example: "Monday"
+                        hours:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              hour:
+                                type: integer
+                                description: Hour of day (0-23)
+                                example: 8
+                              trip_count:
+                                type: integer
+                                description: Number of trips in this hour/day combination
+                                example: 3200
+                              is_peak:
+                                type: boolean
+                                description: True if trip count is significantly above overall average
+                                example: true
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /demand/monthly-trend:
+    get:
+      summary: UC16 – Monthly trip volume trend with percentage variation
+      description: >
+        Returns monthly trip counts over a given period, including the percentage
+        change between consecutive months and an overall trend indicator.
+        By default returns global data across all zones.
+        Can be filtered by zone and year range.
+      parameters:
+        - name: zone_id
+          in: query
+          required: false
+          description: Filter by pickup zone ID (if omitted, returns global data)
+          schema:
+            type: integer
+            example: 161
+        - name: year_from
+          in: query
+          required: false
+          description: Start year of the trend period
+          schema:
+            type: integer
+            example: 2015
+        - name: year_to
+          in: query
+          required: false
+          description: End year of the trend period
+          schema:
+            type: integer
+            example: 2016
+        - name: compare_by
+          in: query
+          required: false
+          description: >
+            Granularity of the variation calculation.
+            'month' compares each month to the previous month.
+            'year' compares each month to the same month in the previous year.
+          schema:
+            type: string
+            enum: [month, year]
+            default: month
+      responses:
+        '200':
+          description: Monthly trip volume trend with variation and trend direction
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  filters_applied:
+                    type: object
+                    properties:
+                      zone_id:
+                        type: integer
+                        nullable: true
+                        example: 161
+                      year_from:
+                        type: integer
+                        nullable: true
+                        example: 2015
+                      year_to:
+                        type: integer
+                        nullable: true
+                        example: 2016
+                      compare_by:
+                        type: string
+                        example: "month"
+                  trend_direction:
+                    type: string
+                    enum: [upward, downward, stable]
+                    description: Overall trend direction for the period
+                    example: upward
+                  months:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        year:
+                          type: integer
+                          example: 2015
+                        month:
+                          type: integer
+                          example: 6
+                        month_name:
+                          type: string
+                          example: "June"
+                        trip_count:
+                          type: integer
+                          description: Total number of trips in this month
+                          example: 340909
+                        variation_percentage:
+                          type: number
+                          format: float
+                          description: Percentage change from previous month (null for first month)
+                          nullable: true
+                          example: 3.45
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  responses:
+    BadRequest:
+      description: Invalid query parameters
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Invalid parameter: month must be between 1 and 12"
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "An unexpected error occurred"
