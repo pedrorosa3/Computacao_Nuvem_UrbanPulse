@@ -25,19 +25,20 @@ def test_health_root(client):
 
 # ── Validação de parâmetros pelo FastAPI ─────────────────────────────────────
 
-def test_breakdown_invalid_zone_type_returns_422(client):
-    # zone_type must be pickup or dropoff
-    r = client.get("/revenue/breakdown?zone_type=invalid")
+def test_breakdown_invalid_zone_id_type_returns_422(client):
+    # zone_id is defined as int, passing a string should trigger 422
+    r = client.get("/revenue/breakdown?zone_id=abc")
     assert r.status_code == 422
 
-def test_avg_fare_invalid_sort_returns_422(client):
-    r = client.get("/revenue/avg-fare-by-zone?sort=random")
+def test_avg_fare_invalid_zone_id_type_returns_422(client):
+    r = client.get("/revenue/avg-fare-by-zone?zone_id=abc")
     assert r.status_code == 422
 
 def test_avg_fare_invalid_limit_returns_422(client):
+    # limit must be >= 1
     r = client.get("/revenue/avg-fare-by-zone?limit=0")
     assert r.status_code == 422
 
-def test_fare_per_km_invalid_sort_returns_422(client):
-    r = client.get("/revenue/fare-per-km?sort=foo")
+def test_fare_per_km_invalid_zone_id_type_returns_422(client):
+    r = client.get("/revenue/fare-per-km?zone_id=abc")
     assert r.status_code == 422

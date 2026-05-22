@@ -25,6 +25,6 @@ def test_health_root(client):
 
 # ── Validação de parâmetros pelo FastAPI ─────────────────────────────────────
 
-def test_avg_fare_invalid_sort_returns_422(client):
-    r = client.get("/revenue/avg-fare-by-zone?sort=random")
+def test_avg_fare_invalid_limit_returns_422(client):
+    r = client.get("/revenue/avg-fare-by-zone?limit=0")
     assert r.status_code == 422
