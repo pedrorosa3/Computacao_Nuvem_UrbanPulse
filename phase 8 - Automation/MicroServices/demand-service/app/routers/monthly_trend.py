@@ -1,0 +1,166 @@
+from fastapi import APIRouter, Query, HTTPException
+from typing import Optional
+from app.db.connection import get_conn
+import calendar
+import json
+import os
+
+try:
+    import redis
+except ImportError:  # permite a app arrancar mesmo que redis ainda não esteja no requirements
+    redis = None
+
+router = APIRouter()
+
+CACHE_TTL_SECONDS = int(os.getenv("CACHE_TTL_SECONDS", "300"))
+REDIS_URL = os.getenv("REDIS_URL")
+
+
+def get_redis_client():
+    if not REDIS_URL or redis is None:
+        return None
+    return redis.Redis.from_url(REDIS_URL, decode_responses=True)
+
+
+redis_client = get_redis_client()
+
+
+def cache_get(key: str):
+    if redis_client is None:
+        return None
+    try:
+        cached = redis_client.get(key)
+        return json.loads(cached) if cached else None
+    except Exception:
+        # Fail-open: se Redis falhar, continua a responder via PostgreSQL
+        return None
+
+
+def cache_set(key: str, value: dict):
+    if redis_client is None:
+        return
+    try:
+        redis_client.setex(key, CACHE_TTL_SECONDS, json.dumps(value))
+    except Exception:
+        # Fail-open: não deixar Redis quebrar o endpoint
+        pass
+
+
+@router.get("/monthly-trend", summary="UC16 – Monthly trip volume trend with percentage variation")
+def monthly_trend(
+    zone_id:    Optional[int] = Query(None, example=161),
+    year_from:  Optional[int] = Query(None, example=2015),
+    year_to:    Optional[int] = Query(None, example=2016),
+    compare_by: str           = Query("month", enum=["month", "year"]),
+):
+
+    use_cache = (
+    zone_id is None and
+    year_from is None and
+    year_to is None
+    )
+    
+    cache_key = f"demand:monthly-trend:compare_by:{compare_by}:v1"
+
+    if use_cache:
+        cached_response = cache_get(cache_key)
+        if cached_response is not None:
+            return cached_response
+
+    # Usar colunas pré-calculadas em vez de EXTRACT()
+    conditions = []
+    params: list = []
+    if zone_id is not None:
+        conditions.append("pickup_zone_id = %s")
+        params.append(zone_id)
+    if year_from:
+        conditions.append("pickup_year >= %s")
+        params.append(year_from)
+    if year_to:
+        conditions.append("pickup_year <= %s")
+        params.append(year_to)
+
+    where = ("WHERE " + " AND ".join(conditions)) if conditions else ""
+
+    query = f"""
+        SELECT
+            pickup_year  AS year,
+            pickup_month AS month,
+            COUNT(*)     AS trip_count
+        FROM trips
+        {where}
+        GROUP BY pickup_year, pickup_month
+        ORDER BY pickup_year, pickup_month
+    """
+
+    try:
+        with get_conn() as conn:
+            with conn.cursor() as cur:
+                cur.execute(query, params)
+                rows = cur.fetchall()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    if not rows:
+        response = {
+            "filters_applied": {
+                "zone_id": zone_id, "year_from": year_from,
+                "year_to": year_to, "compare_by": compare_by,
+            },
+            "trend_direction": "stable",
+            "months": [],
+        }
+        if use_cache:
+            cache_set(cache_key, response)
+        return response
+
+    count_map: dict[tuple, int] = {
+        (r["year"], r["month"]): int(r["trip_count"]) for r in rows
+    }
+
+    months_out = []
+    for r in rows:
+        yr, mo, cnt = int(r["year"]), int(r["month"]), int(r["trip_count"])
+
+        if compare_by == "month":
+            ref_yr = yr if mo > 1 else yr - 1
+            ref_mo = mo - 1 if mo > 1 else 12
+        else:
+            ref_yr, ref_mo = yr - 1, mo
+
+        ref_count = count_map.get((ref_yr, ref_mo))
+        variation = round((cnt - ref_count) / ref_count * 100, 2) if ref_count else None
+
+        months_out.append({
+            "year":                 yr,
+            "month":                mo,
+            "month_name":           calendar.month_name[mo],
+            "trip_count":           cnt,
+            "variation_percentage": variation,
+        })
+
+    counts = [m["trip_count"] for m in months_out]
+    n = len(counts)
+    if n >= 3:
+        third = max(n // 3, 1)
+        avg_start = sum(counts[:third]) / third
+        avg_end   = sum(counts[-third:]) / third
+        diff_pct  = (avg_end - avg_start) / avg_start * 100 if avg_start else 0
+        trend = "upward" if diff_pct > 2 else "downward" if diff_pct < -2 else "stable"
+    else:
+        trend = "stable"
+
+    response = {
+        "filters_applied": {
+            "zone_id":    zone_id,
+            "year_from":  year_from,
+            "year_to":    year_to,
+            "compare_by": compare_by,
+        },
+        "trend_direction": trend,
+        "months":          months_out,
+    }
+
+    if use_cache:
+        cache_set(cache_key, response)
+    return response
