@@ -7,7 +7,7 @@ from app.main import app
 @pytest.fixture(scope="session", autouse=True)
 def mock_grpc_server():
     """Impede o servidor gRPC de arrancar durante os testes."""
-    with patch("app.grpc_server.serve", return_value=MagicMock(stop=MagicMock(), wait_for_termination=MagicMock())):
+    with patch("app.main.grpc_serve", return_value=MagicMock(stop=MagicMock(), wait_for_termination=MagicMock())):
         yield
 
 @pytest.fixture(scope="session")
@@ -25,6 +25,6 @@ def test_health_root(client):
 
 # ── Validação de parâmetros pelo FastAPI ─────────────────────────────────────
 
-def test_avg_fare_invalid_month_returns_422(client):
-    r = client.get("/revenue/avg-fare-by-zone?month=0")
+def test_avg_fare_invalid_sort_returns_422(client):
+    r = client.get("/revenue/avg-fare-by-zone?sort=random")
     assert r.status_code == 422

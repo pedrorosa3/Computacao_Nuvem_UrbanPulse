@@ -7,7 +7,7 @@ from app.main import app
 @pytest.fixture(scope="session", autouse=True)
 def mock_grpc_server():
     """Impede o servidor gRPC de arrancar durante os testes."""
-    with patch("app.grpc_server.serve_grpc", return_value=MagicMock(stop=MagicMock())):
+    with patch("app.main.serve_grpc", return_value=MagicMock(stop=MagicMock())):
         yield
 
 @pytest.fixture(scope="session")
