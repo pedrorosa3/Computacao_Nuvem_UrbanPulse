@@ -39,6 +39,6 @@ def test_avg_fare_invalid_limit_returns_422(client):
     r = client.get("/revenue/avg-fare-by-zone?limit=0")
     assert r.status_code == 422
 
-def test_fare_per_km_invalid_zone_id_type_returns_422(client):
-    r = client.get("/revenue/fare-per-km?zone_id=abc")
+def test_fare_per_km_invalid_month_returns_422(client):
+    r = client.get("/revenue/fare-per-km?month=13")
     assert r.status_code == 422
