@@ -114,6 +114,7 @@ Push para main          →  Lint + Unit Tests + Integration Tests + Build & Pus
 4. As credenciais GCP são apagadas automaticamente da VM após o job terminar
 
 **Imagens actualizadas automaticamente:**
+
 - `location-api:latest`
 - `analytics-api:latest`
 - `demand-api:latest`
@@ -134,7 +135,7 @@ Push para main          →  Lint + Unit Tests + Integration Tests + Build & Pus
 
 ## O que precisam fazer
 
-Para adicionar o vosso serviço ao pipeline, são necessárias **3 alterações**:
+Para adicionar o vosso serviço ao pipeline, são necessárias **4 alterações**:
 
 ### 1. Criar `tests.py` no vosso serviço (Unit Tests)
 
@@ -172,7 +173,37 @@ Mesma localização. Deve cobrir mais cenários do que o `tests.py`:
 - Cenários de erro (404, 503)
 - Se o serviço chama outros via gRPC: testar o que acontece quando falham
 
-### 3. Adicionar o vosso serviço ao workflow
+### 3. Criar testes de integração para o vosso serviço
+
+Os integration tests existem em `tests_integration/` e já testam o location e o analytics. Adicionem testes específicos ao vosso serviço, criem um ficheiro `tests_integration/test_[servico]_integration.py`.
+
+**Regras obrigatórias:**
+
+- **Sem mocks** — o professor confirmou que integration tests com mocks não são integration tests
+- Usar `requests.get("http://localhost:PORT/endpoint")` para chamar os serviços reais
+- Os serviços são iniciados pelo `docker-compose-test.yml` antes dos testes correrem
+
+Exemplo:
+
+```python
+import requests
+
+BASE = "http://localhost:8002"  # porta do vosso serviço
+
+def test_health():
+    r = requests.get(f"{BASE}/health")
+    assert r.status_code == 200
+
+def test_endpoint_com_dados_reais():
+    r = requests.get(f"{BASE}/demand/hourly-matrix")
+    assert r.status_code == 200
+    data = r.json()
+    assert data["overall_avg_trips"] > 0  # verifica que há dados reais
+```
+
+O `conftest.py` já aguarda que todos os serviços estejam prontos antes de correr os testes — não é necessário adicionar nada.
+
+### 4. Adicionar o vosso serviço ao workflow
 
 No ficheiro `.github/workflows/ci-NUMERO.yml` (substituir NUMERO pelo número de aluno), adicionar steps para o vosso serviço nos jobs `unit-test` e `pr-test`:
 
