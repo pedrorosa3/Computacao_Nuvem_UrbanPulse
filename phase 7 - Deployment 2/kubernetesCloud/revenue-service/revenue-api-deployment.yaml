@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: revenue-api
+  namespace: urbanpulse
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: revenue-api
+  template:
+    metadata:
+      labels:
+        app: revenue-api
+    spec:
+      containers:
+        - name: revenue-api
+          image: europe-west1-docker.pkg.dev/fc60252/urbanpulse/revenue-api:latest
+          imagePullPolicy: Always
+          env:
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: revenue-db-secrets
+                  key: username
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: revenue-db-secrets
+                  key: password
+            - name: DATABASE_URL
+              value: "postgresql://$(DB_USER):$(DB_PASSWORD)@revenue-db:5432/revenue_db"
+            - name: TRIP_SERVICE_URL
+              value: trip-api:50051
+            - name: LOCATION_SERVICE_URL
+              value: "location-api:50054"
+            - name: REDIS_URL
+              value: "redis://redis:6379/0"
+            - name: CACHE_TTL_SECONDS
+              value: "300"
+          ports:
+            - containerPort: 8007
+              name: rest
+            - containerPort: 50055
+              name: grpc
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8007
+            initialDelaySeconds: 15
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8007
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"

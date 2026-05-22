@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trip-db
+  namespace: urbanpulse
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: trip-db
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: trip-db
+    spec:
+      containers:
+        - name: trip-db
+          image: postgres:16-alpine
+          env:
+            - name: POSTGRES_USER
+              value: "admin"
+            - name: POSTGRES_PASSWORD
+              value: "isqueiro20"
+            - name: POSTGRES_DB
+              value: "trip_db"
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          ports:
+            - containerPort: 5432
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          volumeMounts:
+            - name: trip-db-storage
+              mountPath: /var/lib/postgresql/data
+            - name: trip-db-init
+              mountPath: /docker-entrypoint-initdb.d
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "admin", "-d", "trip_db"]
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "admin", "-d", "trip_db"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      volumes:
+        - name: trip-db-storage
+          persistentVolumeClaim:
+            claimName: trip-db-pvc
+        - name: trip-db-init
+          configMap:
+            name: trip-db-init

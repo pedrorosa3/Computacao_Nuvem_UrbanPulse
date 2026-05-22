@@ -2,11 +2,8 @@
 data/
 
 db-data/
-**/db-data/
 
 __pycache__/
-**/__pycache__/
-**/*.pyc
 *.py[cod]
 *.pyo
 .env
@@ -23,5 +20,6 @@ Thumbs.db
 secrets.yaml
 
 *.csv
-
-taxiZonesScript/*.csv
+!phase 8 - Automation/test-data/test_trips.csv
+!phase 8 - Automation/test-data/taxi_zone_lookup.csv
+claude.md

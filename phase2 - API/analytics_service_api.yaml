@@ -1,0 +1,437 @@
+openapi: 3.0.3
+info:
+  title: UrbanPulse — Analytics Service
+  version: 1.0.0
+
+paths:
+
+  # UC18 — Coeficiente de Pearson entre duração e gorjeta
+  /analytics/duration-tip-coefficient:
+    get:
+      summary: Correlation coefficient between trip duration and tip amount
+      description: >
+        Analyses whether longer trips tend to receive higher tips by computing
+        the Pearson correlation coefficient between trip duration (minutes) and
+        tip amount (USD). Results are broken down by duration buckets
+        (short: < 10 min, medium: 10-30 min, long: > 30 min) and include
+        average tip per bucket to illustrate the trend.
+        A coefficient close to +1 indicates a strong positive relationship;
+        close to 0 indicates no meaningful relationship.
+        Trip duration is fetched from the Trip Service. Tip amounts are fetched
+        from the Payment Service.
+      operationId: getDurationTipCoefficient
+      parameters:
+        - name: start_date
+          in: query
+          required: false
+          description: Start of the period (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+            example: "2025-01-01"
+        - name: end_date
+          in: query
+          required: false
+          description: End of the period (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+            example: "2025-03-31"
+        - name: zone_id
+          in: query
+          required: false
+          description: Filter results to trips originating from a specific zone
+          schema:
+            type: integer
+            example: 161
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  period:
+                    type: object
+                    properties:
+                      start_date:
+                        type: string
+                        format: date
+                        example: "2025-01-01"
+                      end_date:
+                        type: string
+                        format: date
+                        example: "2025-03-31"
+                  total_trips_analysed:
+                    type: integer
+                    description: Trips included in the analysis (card payments only, tip > 0)
+                    example: 21430000
+                  pearson_coefficient:
+                    type: number
+                    format: float
+                    description: >
+                      Pearson correlation between trip duration (minutes) and tip amount (USD).
+                      Range: -1 to +1. Positive values indicate longer trips tend to have higher tips.
+                    example: 0.54
+                  interpretation:
+                    type: string
+                    description: Plain-language interpretation of the coefficient
+                    example: "Moderate positive correlation — longer trips tend to receive higher tips"
+                  duration_buckets:
+                    type: array
+                    description: Breakdown by duration range
+                    items:
+                      type: object
+                      properties:
+                        bucket:
+                          type: string
+                          enum: [short, medium, long]
+                          example: "medium"
+                        duration_range:
+                          type: string
+                          example: "10-30 min"
+                        trip_count:
+                          type: integer
+                          example: 12400000
+                        avg_duration_min:
+                          type: number
+                          format: float
+                          example: 18.3
+                        avg_tip_usd:
+                          type: number
+                          format: float
+                          example: 3.10
+                        avg_tip_pct_of_fare:
+                          type: number
+                          format: float
+                          description: Average tip as percentage of fare for trips in this bucket
+                          example: 18.4
+        "400":
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  # UC19 — Comparação de padrões de mobilidade entre zonas ricas e periféricas
+  /analytics/mobility-comparison:
+    get:
+      summary: Mobility patterns comparison between affluent and peripheral zones
+      description: >
+        Compares historical mobility patterns between affluent zones (Manhattan
+        Yellow Zones) and peripheral zones (Bronx, Staten Island and Boro Zones).
+        Zone classification is fixed server-side based on the NYC Taxi Zone
+        lookup table service_zone field.
+        Aggregates data from Location Service (trip volume), Revenue Service
+        (fares), Payment Service (tips and payment methods) and Demand Service
+        (demand patterns and peak hours).
+      operationId: getMobilityComparison
+      parameters:
+        - name: start_date
+          in: query
+          required: false
+          description: Start of the period (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+            example: "2025-01-01"
+        - name: end_date
+          in: query
+          required: false
+          description: End of the period (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+            example: "2025-03-31"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  period:
+                    type: object
+                    properties:
+                      start_date:
+                        type: string
+                        format: date
+                        example: "2025-01-01"
+                      end_date:
+                        type: string
+                        format: date
+                        example: "2025-03-31"
+                  total_trips:
+                    type: integer
+                    description: Total trips in the period across all zones
+                    example: 34521890
+                  zone_classifications:
+                    type: object
+                    description: Criteria used to classify zones server-side
+                    properties:
+                      affluent:
+                        type: string
+                        example: "Manhattan Yellow Zone"
+                      peripheral:
+                        type: string
+                        example: "Bronx, Staten Island and Boro Zones"
+                  comparison:
+                    type: object
+                    properties:
+                      affluent:
+                        $ref: "#/components/schemas/ZoneGroupMetrics"
+                      peripheral:
+                        $ref: "#/components/schemas/ZoneGroupMetrics"
+                  mobility_gap:
+                    type: object
+                    description: >
+                      Relative difference between affluent and peripheral zones.
+                      Positive values mean affluent zones have higher values.
+                      Calculated as (affluent - peripheral) / peripheral * 100.
+                    properties:
+                      trip_volume_gap_pct:
+                        type: number
+                        format: float
+                        description: Difference in market share between the two groups
+                        example: 182.4
+                      fare_gap_pct:
+                        type: number
+                        format: float
+                        description: Difference in average fare between the two groups
+                        example: 64.3
+                      tip_gap_pct:
+                        type: number
+                        format: float
+                        description: Difference in average tip between the two groups
+                        example: 216.7
+                      card_payment_gap_pct:
+                        type: number
+                        format: float
+                        description: Difference in card payment usage between the two groups
+                        example: 90.5
+        "400":
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  # UC20 — Deteção de viagens com valores suspeitos
+  /analytics/suspicious-trips:
+    get:
+      summary: Detection of trips with suspicious values
+      description: >
+        Returns trips flagged as suspicious based on anomaly rules applied
+        server-side. A trip is flagged when at least one of the following
+        conditions is met: fare-per-km ratio exceeds 3x the zone median,
+        trip distance is below 0.5 km with a fare above $20, trip duration
+        exceeds 180 minutes with a distance below 5 km, or passenger count
+        is zero. Each flagged trip includes the specific rule(s) triggered
+        and a suspicion score (0-100) reflecting how many rules were violated.
+        Trip data is fetched from the Trip Service. Revenue data is fetched
+        from the Revenue Service.
+      operationId: getSuspiciousTrips
+      parameters:
+        - name: start_date
+          in: query
+          required: false
+          description: Start of the period (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+            example: "2025-01-01"
+        - name: end_date
+          in: query
+          required: false
+          description: End of the period (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+            example: "2025-03-31"
+        - name: zone_id
+          in: query
+          required: false
+          description: Filter flagged trips to a specific pickup zone
+          schema:
+            type: integer
+            example: 161
+        - name: min_score
+          in: query
+          required: false
+          description: Only return trips with a suspicion score at or above this value (0-100)
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 100
+            default: 50
+        - name: limit
+          in: query
+          required: false
+          description: Maximum number of trips to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  period:
+                    type: object
+                    properties:
+                      start_date:
+                        type: string
+                        format: date
+                        example: "2025-01-01"
+                      end_date:
+                        type: string
+                        format: date
+                        example: "2025-03-31"
+                  total_suspicious:
+                    type: integer
+                    description: Total number of trips flagged as suspicious in the period
+                    example: 4821
+                  suspicious_rate_pct:
+                    type: number
+                    format: float
+                    description: Percentage of all trips in the period that were flagged
+                    example: 0.014
+                  trips:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/SuspiciousTrip"
+        "400":
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+components:
+  schemas:
+
+    ZoneGroupMetrics:
+      type: object
+      description: Aggregated mobility metrics for a group of zones
+      properties:
+        zone_count:
+          type: integer
+          description: Number of zones in this group
+          example: 74
+        trip_volume:
+          type: object
+          description: From Location Service
+          properties:
+            total_trips:
+              type: integer
+              example: 24821890
+            market_share_pct:
+              type: number
+              format: float
+              description: Percentage of total city trips originating from this group
+              example: 71.9
+        financials:
+          type: object
+          description: From Revenue Service
+          properties:
+            avg_fare:
+              type: number
+              format: float
+              description: Average fare amount in USD
+              example: 18.40
+            avg_tip:
+              type: number
+              format: float
+              description: Average tip amount in USD
+              example: 3.80
+            avg_tip_pct:
+              type: number
+              format: float
+              description: Average tip as percentage of fare
+              example: 20.7
+        payments:
+          type: object
+          description: From Payment Service
+          properties:
+            card_payment_pct:
+              type: number
+              format: float
+              description: Percentage of trips paid by card
+              example: 78.2
+            cash_payment_pct:
+              type: number
+              format: float
+              description: Percentage of trips paid by cash
+              example: 21.8
+        demand:
+          type: object
+          description: From Demand Service
+          properties:
+            peak_hour:
+              type: integer
+              description: Most common peak hour across zones in this group (0-23)
+              example: 18
+            avg_volatility_index:
+              type: number
+              format: float
+              description: Average volatility index across zones in this group
+              example: 0.38
+            volatility_classification:
+              type: string
+              enum: [low, medium, high]
+              example: "medium"
+
+    SuspiciousTrip:
+      type: object
+      description: A trip record flagged by at least one anomaly rule
+      properties:
+        trip_id:
+          type: string
+          example: "2015_06_14482910"
+        pickup_datetime:
+          type: string
+          format: date-time
+          example: "2015-06-14T22:14:00Z"
+        pickup_zone_id:
+          type: integer
+          example: 161
+        pickup_zone_name:
+          type: string
+          example: "Midtown Center"
+        trip_distance_km:
+          type: number
+          format: float
+          example: 1.9
+        fare_amount:
+          type: number
+          format: float
+          example: 50.00
+        suspicion_score:
+          type: integer
+          description: Composite score 0-100; higher values indicate more severe anomalies
+          example: 85
+        rules_triggered:
+          type: array
+          description: List of anomaly rules that flagged this trip
+          items:
+            type: string
+          example:
+            - "fare_per_km exceeds 3x zone median"
+            - "high fare with very short distance"
+
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 400
+        message:
+          type: string
+          example: "Invalid date range: end_date must be after start_date"

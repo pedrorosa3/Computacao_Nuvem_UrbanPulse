@@ -1,0 +1,685 @@
+openapi: 3.0.3
+info:
+  title: UrbanPulse — Trip Service
+  version: 1.0.0
+
+paths:
+  # UC01 — Classificação das viagens por hora do dia (peak, off-peak, night)
+  /trips/hourly-classification:
+    get:
+      summary: Trip classification by time of day
+      description: >
+        Returns the distribution of trips across three time-of-day classes:
+        peak (07:00–10:00 and 17:00–20:00), off-peak (10:00–17:00 and
+        20:00–23:00) and night (23:00–07:00). Classification thresholds are
+        fixed server-side based on historical NYC taxi demand patterns.
+        Each class includes trip count, percentage share and average fare.
+      operationId: getHourlyClassification
+      parameters:
+        - name: start_date
+          in: query
+          required: false
+          description: Start of the period (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+            example: "2025-01-01"
+        - name: end_date
+          in: query
+          required: false
+          description: End of the period (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+            example: "2025-03-31"
+        - name: zone_id
+          in: query
+          required: false
+          description: Filter results to a specific pickup zone
+          schema:
+            type: integer
+            example: 161
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  period:
+                    type: object
+                    properties:
+                      start_date:
+                        type: string
+                        format: date
+                        example: "2025-01-01"
+                      end_date:
+                        type: string
+                        format: date
+                        example: "2025-03-31"
+                  total_trips:
+                    type: integer
+                    description: Total trips in the period
+                    example: 34521890
+                  classification_thresholds:
+                    type: object
+                    description: Hour ranges used to define each class (server-side, read-only)
+                    properties:
+                      peak:
+                        type: string
+                        example: "07:00-10:00 and 17:00-20:00"
+                      off_peak:
+                        type: string
+                        example: "10:00-17:00 and 20:00-23:00"
+                      night:
+                        type: string
+                        example: "23:00-07:00"
+                  classes:
+                    type: object
+                    properties:
+                      peak:
+                        $ref: "#/components/schemas/TimeClassMetrics"
+                      off_peak:
+                        $ref: "#/components/schemas/TimeClassMetrics"
+                      night:
+                        $ref: "#/components/schemas/TimeClassMetrics"
+        "400":
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  # UC02 — Indice de desvio de rota com classificacao efficient/moderate/inefficient
+  /trips/route-deviation:
+    get:
+      summary: Route deviation index with efficiency classification
+      description: >
+        Returns the route deviation index for trips in the given period,
+        defined as the ratio between the actual trip distance and the
+        straight-line (haversine) distance between pickup and dropoff.
+        A ratio of 1.0 means a perfectly straight route. Trips are then
+        classified as efficient (ratio <= 1.3), moderate (1.3-1.7) or
+        inefficient (> 1.7). Thresholds are fixed server-side based on
+        historical NYC taxi baselines. Results can be filtered by zone
+        or borough to identify areas with structurally longer routes.
+      operationId: getRouteDeviation
+      parameters:
+        - name: start_date
+          in: query
+          required: false
+          description: Start of the period (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+            example: "2025-01-01"
+        - name: end_date
+          in: query
+          required: false
+          description: End of the period (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+            example: "2025-03-31"
+        - name: zone_id
+          in: query
+          required: false
+          description: Filter results to a specific pickup zone
+          schema:
+            type: integer
+            example: 161
+        - name: borough
+          in: query
+          required: false
+          description: Filter results to a specific borough
+          schema:
+            type: string
+            enum: [Manhattan, Brooklyn, Queens, Bronx, Staten Island, EWR]
+            example: "Manhattan"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  period:
+                    type: object
+                    properties:
+                      start_date:
+                        type: string
+                        format: date
+                        example: "2025-01-01"
+                      end_date:
+                        type: string
+                        format: date
+                        example: "2025-03-31"
+                  total_trips:
+                    type: integer
+                    description: Total trips analysed in the period
+                    example: 34521890
+                  deviation_thresholds:
+                    type: object
+                    description: Deviation ratio thresholds used for classification (server-side, read-only)
+                    properties:
+                      efficient:
+                        type: string
+                        example: "ratio <= 1.3"
+                      moderate:
+                        type: string
+                        example: "1.3 < ratio <= 1.7"
+                      inefficient:
+                        type: string
+                        example: "ratio > 1.7"
+                  overall:
+                    type: object
+                    description: Aggregate deviation metrics across all trips in scope
+                    properties:
+                      avg_deviation_index:
+                        type: number
+                        format: float
+                        description: Mean ratio of actual distance to straight-line distance
+                        example: 1.41
+                      median_deviation_index:
+                        type: number
+                        format: float
+                        example: 1.35
+                  classes:
+                    type: object
+                    properties:
+                      efficient:
+                        $ref: "#/components/schemas/DeviationClassMetrics"
+                      moderate:
+                        $ref: "#/components/schemas/DeviationClassMetrics"
+                      inefficient:
+                        $ref: "#/components/schemas/DeviationClassMetrics"
+        "400":
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  # UC03 — Velocidade media das viagens por zona e periodo do dia
+  /trips/speed:
+    get:
+      summary: Average trip speed by zone and time of day
+      description: >
+        Returns the average speed (km/h) of trips aggregated by pickup zone
+        and time-of-day class (peak, off-peak, night). Each zone/period
+        combination is automatically classified as slow (< 15 km/h),
+        normal (15-30 km/h) or fast (> 30 km/h) using thresholds derived
+        from historical NYC taxi data. Results can be filtered by zone,
+        borough or time class.
+      operationId: getTripSpeed
+      parameters:
+        - name: start_date
+          in: query
+          required: false
+          description: Start of the period (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+            example: "2025-01-01"
+        - name: end_date
+          in: query
+          required: false
+          description: End of the period (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+            example: "2025-03-31"
+        - name: zone_id
+          in: query
+          required: false
+          description: Filter results to a specific pickup zone
+          schema:
+            type: integer
+            example: 161
+        - name: borough
+          in: query
+          required: false
+          description: Filter results to a specific borough
+          schema:
+            type: string
+            enum: [Manhattan, Brooklyn, Queens, Bronx, Staten Island, EWR]
+            example: "Manhattan"
+        - name: time_class
+          in: query
+          required: false
+          description: Filter results to a specific time-of-day class
+          schema:
+            type: string
+            enum: [peak, off_peak, night]
+            example: "peak"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  period:
+                    type: object
+                    properties:
+                      start_date:
+                        type: string
+                        format: date
+                        example: "2025-01-01"
+                      end_date:
+                        type: string
+                        format: date
+                        example: "2025-03-31"
+                  speed_thresholds:
+                    type: object
+                    description: Speed thresholds used for classification (server-side, read-only)
+                    properties:
+                      slow:
+                        type: string
+                        example: "< 15 km/h"
+                      normal:
+                        type: string
+                        example: "15-30 km/h"
+                      fast:
+                        type: string
+                        example: "> 30 km/h"
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        zone_id:
+                          type: integer
+                          example: 161
+                        zone_name:
+                          type: string
+                          example: "Midtown Center"
+                        borough:
+                          type: string
+                          example: "Manhattan"
+                        time_class:
+                          type: string
+                          enum: [peak, off_peak, night]
+                          example: "peak"
+                        trip_count:
+                          type: integer
+                          example: 48200
+                        avg_speed_kmh:
+                          type: number
+                          format: float
+                          description: Average trip speed in km/h
+                          example: 12.4
+                        speed_classification:
+                          type: string
+                          enum: [slow, normal, fast]
+                          example: "slow"
+        "400":
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  # UC22 — Submissao de uma nova viagem para analise
+  /trips:
+    post:
+      summary: Submit a new trip record for analysis
+      description: >
+        Inserts a new trip record into the dataset and immediately enriches it
+        with all Trip Service classifications: time-of-day class (UC01),
+        route deviation class (UC02) and speed classification (UC03).
+        The enriched record is persisted and becomes available in all
+        subsequent analytical endpoints. Intended for ingesting real-time
+        feeds or external data sources into the historical baseline.
+      operationId: createTrip
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TripInput"
+      responses:
+        "201":
+          description: Trip created and enriched successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  trip_id:
+                    type: string
+                    description: System-generated unique identifier for the new trip
+                    example: "2025_03_98712345"
+                  created_at:
+                    type: string
+                    format: date-time
+                    example: "2025-03-15T08:52:01Z"
+                  enrichment:
+                    $ref: "#/components/schemas/TripEnrichment"
+        "400":
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "422":
+          description: Unprocessable trip — zone IDs not found or datetime range invalid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  # UC21 — Remocao e atualizacao de viagens
+  /trips/{trip_id}:
+    put:
+      summary: Update an existing trip record
+      description: >
+        Updates one or more fields of an existing trip record and
+        re-applies all Trip Service classifications (UC01, UC02, UC03)
+        to the updated data. Useful for correcting trips inserted with
+        errors via POST /trips. Only fields explicitly provided in the
+        request body are updated — omitted fields retain their current
+        values. Re-enrichment is always applied to the full updated record.
+      operationId: updateTrip
+      parameters:
+        - name: trip_id
+          in: path
+          required: true
+          description: Unique identifier of the trip to update
+          schema:
+            type: string
+            example: "2025_03_98712345"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: >
+                Partial trip update — only include fields that need to be changed.
+                At least one field must be provided.
+              properties:
+                pickup_datetime:
+                  type: string
+                  format: date-time
+                  example: "2025-03-15T08:32:00Z"
+                dropoff_datetime:
+                  type: string
+                  format: date-time
+                  example: "2025-03-15T08:51:00Z"
+                pickup_zone_id:
+                  type: integer
+                  example: 161
+                dropoff_zone_id:
+                  type: integer
+                  example: 132
+                trip_distance_km:
+                  type: number
+                  format: float
+                  example: 14.3
+                fare_amount:
+                  type: number
+                  format: float
+                  example: 22.50
+                tip_amount:
+                  type: number
+                  format: float
+                  example: 4.50
+                passenger_count:
+                  type: integer
+                  minimum: 0
+                  maximum: 9
+                  example: 2
+                payment_type:
+                  type: string
+                  enum: [card, cash, no_charge, dispute]
+                  example: "card"
+      responses:
+        "200":
+          description: Trip updated and re-enriched successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  trip_id:
+                    type: string
+                    example: "2025_03_98712345"
+                  updated_at:
+                    type: string
+                    format: date-time
+                    example: "2025-03-15T09:10:00Z"
+                  enrichment:
+                    $ref: "#/components/schemas/TripEnrichment"
+        "404":
+          description: Trip not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "400":
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "422":
+          description: Unprocessable update — zone IDs not found or datetime range invalid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+    delete:
+      summary: Remove a trip record flagged as invalid or suspicious
+      description: >
+        Permanently removes a single trip record from the dataset.
+        Intended for use after a trip has been reviewed and confirmed as
+        invalid or corrupt (e.g. via UC20 detection). The caller must supply
+        a reason for the deletion, which is persisted in an audit log.
+        Only trips with a suspicion score >= 50 or explicitly marked as
+        corrupt are eligible for deletion.
+      operationId: deleteTrip
+      parameters:
+        - name: trip_id
+          in: path
+          required: true
+          description: Unique identifier of the trip record to delete
+          schema:
+            type: string
+            example: "2015_06_14482910"
+        - name: reason
+          in: query
+          required: true
+          description: Human-readable reason for deletion, persisted in audit log
+          schema:
+            type: string
+            example: "Fare of $98 for a 1.2 km trip — confirmed outlier via UC20"
+      responses:
+        "200":
+          description: Trip successfully deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  trip_id:
+                    type: string
+                    example: "2015_06_14482910"
+                  deleted:
+                    type: boolean
+                    example: true
+                  audit_log_id:
+                    type: string
+                    description: Reference ID for the deletion entry in the audit log
+                    example: "audit_8f3a2c"
+        "404":
+          description: Trip not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "422":
+          description: Trip is not eligible for deletion (suspicion score below threshold)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+components:
+  schemas:
+
+    TripInput:
+      type: object
+      required:
+        - pickup_datetime
+        - dropoff_datetime
+        - pickup_zone_id
+        - dropoff_zone_id
+        - trip_distance_km
+        - fare_amount
+        - payment_type
+      properties:
+        pickup_datetime:
+          type: string
+          format: date-time
+          description: Trip start timestamp (ISO 8601)
+          example: "2025-03-15T08:32:00Z"
+        dropoff_datetime:
+          type: string
+          format: date-time
+          description: Trip end timestamp (ISO 8601)
+          example: "2025-03-15T08:51:00Z"
+        pickup_zone_id:
+          type: integer
+          description: NYC Taxi Zone ID for the pickup location
+          example: 161
+        dropoff_zone_id:
+          type: integer
+          description: NYC Taxi Zone ID for the dropoff location
+          example: 132
+        trip_distance_km:
+          type: number
+          format: float
+          description: Actual distance travelled in kilometres
+          example: 14.3
+        fare_amount:
+          type: number
+          format: float
+          description: Base fare in USD (excluding tips and surcharges)
+          example: 22.50
+        tip_amount:
+          type: number
+          format: float
+          description: Tip amount in USD (optional, defaults to 0)
+          example: 4.50
+        passenger_count:
+          type: integer
+          minimum: 0
+          maximum: 9
+          description: Number of passengers (optional)
+          example: 2
+        payment_type:
+          type: string
+          enum: [card, cash, no_charge, dispute]
+          description: Method of payment
+          example: "card"
+
+    TripEnrichment:
+      type: object
+      description: Automatic classifications applied at ingestion or update time
+      properties:
+        time_class:
+          type: string
+          enum: [peak, off_peak, night]
+          description: UC01 — Time-of-day classification
+          example: "peak"
+        deviation_index:
+          type: number
+          format: float
+          description: UC02 — Route deviation ratio (actual / straight-line distance)
+          example: 1.38
+        deviation_class:
+          type: string
+          enum: [efficient, moderate, inefficient]
+          description: UC02 — Route efficiency classification
+          example: "moderate"
+        avg_speed_kmh:
+          type: number
+          format: float
+          description: UC03 — Computed average speed in km/h
+          example: 45.2
+        speed_class:
+          type: string
+          enum: [slow, normal, fast]
+          description: UC03 — Speed classification
+          example: "fast"
+        suspicion_score:
+          type: integer
+          description: UC20 — Suspicion score (0-100). 0 means no anomalies detected.
+          example: 0
+
+    TimeClassMetrics:
+      type: object
+      description: Aggregated metrics for a single time-of-day class
+      properties:
+        trip_count:
+          type: integer
+          example: 12840000
+        share_pct:
+          type: number
+          format: float
+          description: Percentage of total trips belonging to this class
+          example: 37.2
+        avg_fare:
+          type: number
+          format: float
+          description: Average fare in USD for trips in this class
+          example: 16.80
+        avg_duration_min:
+          type: number
+          format: float
+          description: Average trip duration in minutes
+          example: 21.4
+
+    DeviationClassMetrics:
+      type: object
+      description: Aggregated metrics for a single route deviation class
+      properties:
+        trip_count:
+          type: integer
+          example: 18420000
+        share_pct:
+          type: number
+          format: float
+          description: Percentage of total trips in this deviation class
+          example: 53.4
+        avg_deviation_index:
+          type: number
+          format: float
+          description: Mean deviation ratio for trips in this class
+          example: 1.18
+        avg_extra_distance_km:
+          type: number
+          format: float
+          description: Average extra distance (actual minus straight-line) in km
+          example: 0.9
+
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 400
+        message:
+          type: string
+          example: "Invalid date range: end_date must be after start_date"

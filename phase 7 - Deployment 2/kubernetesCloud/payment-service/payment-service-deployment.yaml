@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-deploy
+  namespace: urbanpulse
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: payment-service
+  template:
+    metadata:
+      labels:
+        app: payment-service
+    spec:
+      containers:
+        - name: payment-service
+          image: europe-west1-docker.pkg.dev/computacaonuvem60294/urbanpulse/payment-service:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8006
+            - containerPort: 50052
+          env:
+            - name: DB_HOST
+              value: "payment-db"
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_NAME
+              value: "payment_db"
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: payment-db-secrets
+                  key: username
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: payment-db-secrets
+                  key: password
+            - name: DATABASE_URL
+              value: "postgresql://$(DB_USER):$(DB_PASSWORD)@payment-db:5432/payment_db"
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "250m"
+              memory: "256Mi"
+          livenessProbe:
+            httpGet:
+              path: /payments/health
+              port: 8006
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /payments/health
+              port: 8006
+            initialDelaySeconds: 5
+            periodSeconds: 10
