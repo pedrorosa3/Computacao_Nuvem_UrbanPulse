@@ -10,12 +10,12 @@ O ficheiro do pipeline está em `.github/workflows/ci-60250.yml`.
 
 ## Como funciona o pipeline
 
-O pipeline tem 3 triggers diferentes, cada um com um propósito distinto:
+O pipeline tem 4 jobs encadeados, activados por 3 triggers distintos:
 
 ```
-Push para branch 60250  →  Stage 1: Lint + Unit Tests
-Pull Request para main  →  Stage 2: Pull Request Tests
-Push para main          →  Stage 3: Integration Tests
+Push para branch 60250  →  Lint + Unit Tests
+Pull Request para main  →  Lint + Unit Tests + Pull Request Tests
+Push para main          →  Lint + Unit Tests + Integration Tests + Build & Push (CD)
 ```
 
 ---
@@ -97,6 +97,38 @@ Push para main          →  Stage 3: Integration Tests
 **Ficheiros de testes:** `tests_integration/` na raiz da pasta phase 8
 
 **Dados de teste:** `test-data/test_trips.csv` (5000 linhas) e `test-data/taxi_zone_lookup.csv` (265 zonas) — commitados no repositório para o pipeline funcionar sem CSV externo.
+
+---
+
+## CD — Continuous Delivery (Build & Push automático)
+
+**Trigger:** push para `main` — corre **após** os Integration Tests passarem
+
+**Para que serve:** garante que as imagens Docker no Artifact Registry estão sempre actualizadas com o código da branch `main`. Sempre que há um merge, as imagens são construídas automaticamente e enviadas para o registry — sem precisar de correr `gcloud builds submit` manualmente.
+
+**Como funciona:**
+
+1. Autentica no GCP usando uma **Service Account** com permissões mínimas (só escrita no Artifact Registry)
+2. Configura o Docker para comunicar com o Artifact Registry
+3. Faz `docker build` e `docker push` das 6 imagens para `europe-west1-docker.pkg.dev/fc60250/urbanpulse/`
+4. As credenciais GCP são apagadas automaticamente da VM após o job terminar
+
+**Imagens actualizadas automaticamente:**
+- `location-api:latest`
+- `analytics-api:latest`
+- `demand-api:latest`
+- `revenue-api:latest`
+- `trip-api:latest`
+- `payment-service:latest`
+
+**Segurança — o que foi configurado:**
+
+- **Service Account** `github-cd@fc60250.iam.gserviceaccount.com` criada especificamente para este pipeline
+- Permissão **apenas** no repositório `urbanpulse` do Artifact Registry (`roles/artifactregistry.writer`) — não tem acesso ao cluster GKE, BDs, nem outros recursos GCP
+- As credenciais estão guardadas como **GitHub Secret** (`GCP_SA_KEY`) — nunca aparecem nos logs nem no código
+- **Cleanup policy** configurada no Artifact Registry: imagens sem tag com mais de 1 dia são apagadas automaticamente, mantendo o registry limpo
+
+**Nota:** este é **Continuous Delivery**, não Continuous Deployment — o deploy no GKE continua a ser feito manualmente seguindo o `READMECloud.md`. As imagens ficam prontas no registry, mas a decisão de fazer deploy é sempre manual.
 
 ---
 
@@ -189,5 +221,4 @@ def client(mock_grpc_server):
 - **Os testes de Stage 1 e 2 podem usar mocks** — são unit tests / PR tests, não integration tests
 - **Os dados de teste estão em `test-data/`** — o `test_trips.csv` (5000 linhas) e o `taxi_zone_lookup.csv` são usados pelos seeds no Stage 3. O `.gitignore` tem excepções para estes dois ficheiros específicos
 - **O seed do Demand precisa de `seed_extra.py`** para popular dados de tendências mensais — correr manualmente depois do `seed.py` se necessário
-
-# Ainda falta a parte de CD, que é atualizar automaticamente as images do artifact registry.
+- **O CD (Build & Push) está implementado** — ao fazer merge para `main`, todas as imagens são actualizadas automaticamente no Artifact Registry. O GitHub Secret `GCP_SA_KEY` tem de estar configurado no repositório para o CD funcionar
