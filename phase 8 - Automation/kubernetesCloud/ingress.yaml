@@ -1,0 +1,67 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: urbanpulse-ingress
+  namespace: urbanpulse
+  annotations:
+    kubernetes.io/ingress.class: "gce"
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /trips
+            pathType: Prefix
+            backend:
+              service:
+                name: trip-api
+                port:
+                  number: 8001
+          - path: /locations
+            pathType: Prefix
+            backend:
+              service:
+                name: location-api
+                port:
+                  number: 8000
+          - path: /analytics
+            pathType: Prefix
+            backend:
+              service:
+                name: analytics-api
+                port:
+                  number: 8003
+          - path: /payments
+            pathType: Prefix
+            backend:
+              service:
+                name: payment-svc
+                port:
+                  number: 8006
+          - path: /demand
+            pathType: Prefix
+            backend:
+              service:
+                name: demand-api
+                port:
+                  number: 8002
+          - path: /revenue
+            pathType: Prefix
+            backend:
+              service:
+                name: revenue-api
+                port:
+                  number: 8007
+          - path: /prometheus
+            pathType: Prefix
+            backend:
+              service:
+                name: prometheus
+                port:
+                  number: 9090
+          - path: /grafana
+            pathType: Prefix
+            backend:
+              service:
+                name: grafana
+                port:
+                  number: 3000

@@ -1,0 +1,89 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: urbanpulse
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+
+    scrape_configs:
+      - job_name: 'location-api'
+        static_configs:
+          - targets: ['location-api:8000']
+        metrics_path: '/locations/metrics'
+
+      - job_name: 'analytics-api'
+        static_configs:
+          - targets: ['analytics-api:8003']
+        metrics_path: '/analytics/metrics'
+
+      - job_name: 'payment-service'
+        static_configs:
+          - targets: ['payment-svc:8006']
+        metrics_path: '/payments/metrics'
+---
+apiVersion: cloud.google.com/v1
+kind: BackendConfig
+metadata:
+  name: prometheus-backend-config
+  namespace: urbanpulse
+spec:
+  healthCheck:
+    requestPath: /prometheus/-/healthy
+    port: 9090
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+  namespace: urbanpulse
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+    spec:
+      containers:
+        - name: prometheus
+          image: prom/prometheus:latest
+          args:
+            - "--config.file=/etc/prometheus/prometheus.yml"
+            - "--web.external-url=http://34.107.147.15/prometheus"
+            - "--web.route-prefix=/prometheus"
+          ports:
+            - containerPort: 9090
+          volumeMounts:
+            - name: config
+              mountPath: /etc/prometheus
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 200m
+              memory: 512Mi
+      volumes:
+        - name: config
+          configMap:
+            name: prometheus-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+  namespace: urbanpulse
+  annotations:
+    cloud.google.com/backend-config: '{"default": "prometheus-backend-config"}'
+spec:
+  selector:
+    app: prometheus
+  ports:
+    - port: 9090
+      targetPort: 9090
+  type: NodePort

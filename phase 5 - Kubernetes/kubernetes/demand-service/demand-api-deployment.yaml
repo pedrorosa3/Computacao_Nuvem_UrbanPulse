@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demand-api
+  namespace: urbanpulse
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: demand-api
+  template:
+    metadata:
+      labels:
+        app: demand-api
+    spec:
+      containers:
+        - name: demand-api
+          image: demand-api:latest
+          imagePullPolicy: Never  # usar imagem local (mudar para Always no GKE)
+          env:
+            - name: DATABASE_URL
+              value: postgresql://urbanpulse:urbanpulse@demand-db:5432/demand_db
+          ports:
+            - containerPort: 8002
+            - containerPort: 50053
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8002
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8002
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"

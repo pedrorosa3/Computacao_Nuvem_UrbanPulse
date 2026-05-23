@@ -18,9 +18,15 @@ spec:
           image: postgres:16-alpine
           env:
             - name: POSTGRES_USER
-              value: "admin"
+              valueFrom:
+                secretKeyRef:
+                  name: payment-db-secrets
+                  key: username
             - name: POSTGRES_PASSWORD
-              value: "password"
+              valueFrom:
+                secretKeyRef:
+                  name: payment-db-secrets
+                  key: password
             - name: POSTGRES_DB
               value: "payment_db"
             - name: PGDATA
@@ -37,17 +43,22 @@ spec:
           volumeMounts:
             - name: payment-db-storage
               mountPath: /var/lib/postgresql/data
+            - name: payment-db-init
+              mountPath: /docker-entrypoint-initdb.d
           livenessProbe:
             exec:
-              command: ["pg_isready", "-U", "admin", "-d", "payment_db"]
+              command: ["pg_isready", "-U", "$(POSTGRES_USER)", "-d", "payment_db"]
             initialDelaySeconds: 30
             periodSeconds: 10
           readinessProbe:
             exec:
-              command: ["pg_isready", "-U", "admin", "-d", "payment_db"]
+              command: ["pg_isready", "-U", "$(POSTGRES_USER)", "-d", "payment_db"]
             initialDelaySeconds: 5
             periodSeconds: 5
       volumes:
         - name: payment-db-storage
           persistentVolumeClaim:
             claimName: payment-db-pvc
+        - name: payment-db-init
+          configMap:
+            name: payment-db-init

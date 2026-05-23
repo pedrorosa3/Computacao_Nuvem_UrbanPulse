@@ -1,3 +1,4 @@
+from fastapi_cache.decorator import cache
 import math
 from fastapi import APIRouter, Depends, Query, HTTPException
 from app.bigquery_client import get_bq_client # <-- Importa a ligação que criámos há bocado!
@@ -15,6 +16,7 @@ PAYMENT_TYPES = {
 }
 
 @router.get("/tips/comparison")
+@cache(expire=3600) # Guarda o resultado por 1 hora
 def compare_tips(
     start_date: str = Query(None, description="YYYY-MM-DD"), 
     end_date: str = Query(None, description="YYYY-MM-DD")
@@ -60,6 +62,7 @@ def compare_tips(
 
 
 @router.get("/distribution")
+@cache(expire=3600) # Guarda o resultado por 1 hora
 def payment_distribution():
     """UC12 — Distribuição de métodos de pagamento e zonas atípicas"""
     client = get_bq_client()
@@ -94,6 +97,7 @@ def payment_distribution():
 
 
 @router.get("/zones/tipping-score")
+@cache(expire=3600) # Guarda o resultado por 1 hora
 def ranking_tipping_score(limit: int = Query(10, ge=1, le=100)):
     """UC13 — Ranking de zonas por Tipping Score"""
     client = get_bq_client()
@@ -126,6 +130,7 @@ def ranking_tipping_score(limit: int = Query(10, ge=1, le=100)):
 
 
 @router.get("/tips/passenger-correlation")
+@cache(expire=3600) # Guarda o resultado por 1 hora
 def passenger_tip_correlation(
     start_date: str = Query(None, description="YYYY-MM-DD"),
     end_date: str = Query(None, description="YYYY-MM-DD")

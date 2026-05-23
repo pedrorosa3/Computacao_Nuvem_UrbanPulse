@@ -30,9 +30,15 @@ spec:
             - name: DB_NAME
               value: "location_db"
             - name: DB_USER
-              value: "admin"
+              valueFrom:
+                secretKeyRef:
+                  name: location-db-secrets
+                  key: username
             - name: DB_PASSWORD
-              value: "isqueiro20"
+              valueFrom:
+                secretKeyRef:
+                  name: location-db-secrets
+                  key: password
             - name: DEMAND_SERVICE_URL
               value: "demand-api:50053"
           ports:

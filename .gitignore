@@ -18,4 +18,8 @@ Thumbs.db
 
 *.env
 secrets.yaml
-TaxiZonesScript/yellow_tripdata_2015-01.csv
+
+*.csv
+!phase 8 - Automation/test-data/test_trips.csv
+!phase 8 - Automation/test-data/taxi_zone_lookup.csv
+claude.md

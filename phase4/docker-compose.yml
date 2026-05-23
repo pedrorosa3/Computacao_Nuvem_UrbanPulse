@@ -1,0 +1,75 @@
+services:
+  # ─── PostgreSQL — Revenue ──────────────────────────────────────────────────
+  db-revenue:
+    image: postgres:16-alpine
+    container_name: urbanpulse-db-revenue
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: revenue_db
+      POSTGRES_USER: urbanpulse
+      POSTGRES_PASSWORD: urbanpulse
+    volumes:
+      - ./revenue-service/db:/docker-entrypoint-initdb.d
+      - ./revenue-service/db-data:/var/lib/postgresql/data
+    ports:
+      - "5437:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U urbanpulse -d revenue_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # ─── PostgreSQL — Demand ───────────────────────────────────────────────────
+  db-demand:
+    image: postgres:16-alpine
+    container_name: urbanpulse-db-demand
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: demand_db
+      POSTGRES_USER: urbanpulse
+      POSTGRES_PASSWORD: urbanpulse
+    volumes:
+      - ./demand-service/db:/docker-entrypoint-initdb.d
+      - ./demand-service/db-data:/var/lib/postgresql/data
+    ports:
+      - "5434:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U urbanpulse -d demand_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # ─── Revenue Service ───────────────────────────────────────────────────────
+  revenue-service:
+    build:
+      context: ./revenue-service
+    container_name: urbanpulse-revenue
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://urbanpulse:urbanpulse@db-revenue:5432/revenue_db
+    ports:
+      - "8007:8001"
+    depends_on:
+      db-revenue:
+        condition: service_healthy
+    volumes:
+      - ./revenue-service/app:/app/app
+
+  # ─── Demand Service ────────────────────────────────────────────────────────
+  demand-service:
+    build:
+      context: ./demand-service
+    container_name: urbanpulse-demand
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://urbanpulse:urbanpulse@db-demand:5432/demand_db
+    ports:
+      - "8002:8002"
+      - "50053:50053"
+    depends_on:
+      db-demand:
+        condition: service_healthy
+    volumes:
+      - ./demand-service/app:/app/app

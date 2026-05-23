@@ -18,8 +18,18 @@ spec:
           image: europe-west1-docker.pkg.dev/fc60252/urbanpulse/revenue-api:latest
           imagePullPolicy: Always
           env:
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: revenue-db-secrets
+                  key: username
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: revenue-db-secrets
+                  key: password
             - name: DATABASE_URL
-              value: postgresql://urbanpulse:urbanpulse@revenue-db:5432/revenue_db
+              value: "postgresql://$(DB_USER):$(DB_PASSWORD)@revenue-db:5432/revenue_db"
             - name: TRIP_SERVICE_URL
               value: trip-api:50051
             - name: LOCATION_SERVICE_URL

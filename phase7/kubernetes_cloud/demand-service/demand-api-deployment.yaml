@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demand-api
+  namespace: urbanpulse
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: demand-api
+  template:
+    metadata:
+      labels:
+        app: demand-api
+    spec:
+      containers:
+        - name: demand-api
+          image: europe-west1-docker.pkg.dev/fc60252/urbanpulse/demand-api:latest
+          imagePullPolicy: Always
+          env:
+            - name: DATABASE_URL
+              value: postgresql://urbanpulse:urbanpulse@demand-db:5432/demand_db
+            - name: LOCATION_SERVICE_URL
+              value: "location-api:50054"
+            - name: REDIS_URL
+              value: "redis://redis:6379/0"
+            - name: CACHE_TTL_SECONDS
+              value: "300"
+          ports:
+            - containerPort: 8002
+              name: rest
+            - containerPort: 50053
+              name: grpc
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8002
+            initialDelaySeconds: 15
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8002
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"

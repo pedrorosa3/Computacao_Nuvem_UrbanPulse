@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: payment-service
-          image: europe-west1-docker.pkg.dev/fc60250/urbanpulse/payment-service:latest
+          image: europe-west1-docker.pkg.dev/computacaonuvem60294/urbanpulse/payment-service:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8006
@@ -28,11 +28,17 @@ spec:
             - name: DB_NAME
               value: "payment_db"
             - name: DB_USER
-              value: "admin"
+              valueFrom:
+                secretKeyRef:
+                  name: payment-db-secrets
+                  key: username
             - name: DB_PASSWORD
-              value: "password"
+              valueFrom:
+                secretKeyRef:
+                  name: payment-db-secrets
+                  key: password
             - name: DATABASE_URL
-              value: "postgresql://admin:password@payment-db:5432/payment_db"
+              value: "postgresql://$(DB_USER):$(DB_PASSWORD)@payment-db:5432/payment_db"
           resources:
             requests:
               cpu: "100m"
