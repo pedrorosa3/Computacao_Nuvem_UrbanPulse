@@ -226,26 +226,15 @@ def test_delete_trip_not_found():
     r = requests.delete(f"{BASE}/trips/999999999")
     assert r.status_code == 404
 
-def test_delete_trip_and_verify_removed():
-    """Submete uma viagem, apaga-a e verifica que desapareceu."""
-    post_r = requests.post(f"{BASE}/trips", json={
-        "pickup_datetime":  "2015-01-10T08:30:00",
-        "dropoff_datetime": "2015-01-10T08:55:00",
-        "passenger_count": 1,
-        "trip_distance_km": 2.0,
-        "pickup_zone_id": 100,
-        "pickup_zone_name": "Test Zone",
-        "dropoff_zone_id": 101,
-        "dropoff_zone_name": "Test Zone 2",
-        "fare_amount": 8.0,
-        "payment_type": 1,
-    })
-    assert post_r.status_code == 201
-    trip_id = post_r.json()["trip_id"]
+def test_bulk_delete_removes_invalid_trips():
+    """Verifica que o bulk delete remove viagens inválidas da DB."""
+    # Primeiro verifica quantas inválidas existem
+    dry_run_r = requests.delete(f"{BASE}/trips/invalid/bulk?dry_run=true")
+    assert dry_run_r.status_code == 200
+    invalid_count = dry_run_r.json()["invalid_trips"]
 
-    delete_r = requests.delete(f"{BASE}/trips/{trip_id}")
+    # Executa o bulk delete
+    delete_r = requests.delete(f"{BASE}/trips/invalid/bulk?dry_run=false")
     assert delete_r.status_code == 200
-    assert delete_r.json()["deleted"] is True
-
-    delete_again = requests.delete(f"{BASE}/trips/{trip_id}")
-    assert delete_again.status_code == 404
+    assert delete_r.json()["dry_run"] is False
+    assert delete_r.json()["deleted_trips"] == invalid_count
