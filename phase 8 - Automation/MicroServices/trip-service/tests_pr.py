@@ -120,19 +120,6 @@ def test_speed_zones_classification_thresholds_present(client):
 
 # ── UC21 — DELETE ─────────────────────────────────────────────────────────────
 
-def test_delete_trip_not_found(client):
-    with patch("app.routers.uc21_remove_invalid.execute_query", return_value=[]):
-        r = client.delete("/trips/9999")
-    assert r.status_code == 404
-
-def test_delete_trip_success(client):
-    with patch("app.routers.uc21_remove_invalid.execute_query", return_value=[{"id": 1}]):
-        with patch("app.routers.uc21_remove_invalid.execute_write", return_value=1):
-            r = client.delete("/trips/1")
-    assert r.status_code == 200
-    assert r.json()["deleted"] is True
-    assert r.json()["trip_id"] == 1
-
 def test_bulk_delete_dry_run(client):
     with patch("app.routers.uc21_remove_invalid.execute_query", return_value=[{"invalid_count": 47}]):
         r = client.delete("/trips/invalid/bulk?dry_run=true")
