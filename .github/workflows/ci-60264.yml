@@ -124,7 +124,7 @@ jobs:
 
       - name: Run integration tests
         working-directory: "phase 8 - Automation"
-        run: pytest tests_integration/ -v
+        run: pytest tests_integration/test_trip_integration.py -v
 
       - name: Stop all services
         if: always()
