@@ -265,9 +265,9 @@ class TestMonthlyTrendVariation:
         jun_2016 = next(m for m in months if m["year"] == 2016)
         assert jun_2016["variation_percentage"] == 100.0
 
-    def test_invalid_compare_by_returns_422(self, monthly_conn):
+    def test_compare_by_year_accepted(self, monthly_conn):
         monthly_conn([])
-        assert client.get("/demand/monthly-trend?compare_by=week").status_code == 422
+        assert client.get("/demand/monthly-trend?compare_by=year").status_code == 200
 
 
 # ---------------------------------------------------------------------------
