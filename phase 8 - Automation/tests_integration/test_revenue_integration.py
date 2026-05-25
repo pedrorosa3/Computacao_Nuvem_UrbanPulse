@@ -7,7 +7,7 @@ Usa `requests` contra o serviço real — sem mocks.
 import pytest
 import requests
 
-BASE_URL = "http://localhost:8003"  # ajusta à porta do revenue-service no docker-compose-test.yml
+BASE_URL = "http://localhost:8007"  
 
 
 def get(path, **params):
