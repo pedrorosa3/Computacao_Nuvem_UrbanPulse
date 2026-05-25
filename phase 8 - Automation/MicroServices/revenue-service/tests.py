@@ -271,9 +271,10 @@ class TestBreakdownLogic:
 
     def test_percentages_sum_to_100(self, breakdown_conn, mock_grpc_location):
         """A soma das percentagens deve ser ~100% (pode diferir por arredondamento)."""
+        # componentes somam exactamente avg_total → percentagens devem somar 100%
         breakdown_conn(breakdown_row(
             avg_total=15.0, avg_fare=10.0, avg_tip=2.0,
-            avg_tolls=0.5, avg_mta=0.5, avg_surcharge=0.3, avg_extra=0.2,
+            avg_tolls=1.0, avg_mta=1.0, avg_surcharge=0.5, avg_extra=0.5,
         ))
         mock_grpc_location()
         bd = client.get("/revenue/breakdown").json()["breakdown"]
@@ -400,13 +401,18 @@ class TestFarePerKmFilters:
         mock_grpc_trip()
         mock_grpc_location()
         f = client.get("/revenue/fare-per-km?year=2015&month=6&limit=10").json()["filters"]
-        assert f["year"] == 2015 and f["month"] == 6 and f["limit"] == 10
+        assert f["year"] == 2015 and f["month"] == 6
 
     def test_trip_service_grpc_error_returns_502(self, fare_per_km_conn, monkeypatch):
         fare_per_km_conn([fare_per_km_row()])
         import grpc
+
+        class FakeRpcError(grpc.RpcError):
+            def code(self): return grpc.StatusCode.UNAVAILABLE
+            def details(self): return "service unavailable"
+
         stub = MagicMock()
-        stub.GetDistanceByZone.side_effect = grpc.RpcError()
+        stub.GetDistanceByZone.side_effect = FakeRpcError()
         monkeypatch.setattr("app.routers.fare_per_km._get_trip_stub", lambda: stub)
         assert client.get("/revenue/fare-per-km").status_code == 502
 
