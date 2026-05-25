@@ -91,23 +91,23 @@ kubectl create namespace urbanpulse
 
 ```bash
 kubectl create configmap location-db-init \
-  --from-file=init.sql=/home/diogocsousa27/MicroServices/location-service/db/init.sql \
+  --from-file=init.sql=$HOME/MicroServices/location-service/db/init.sql \
   -n urbanpulse
 
 kubectl create configmap demand-db-init \
-  --from-file=init.sql=/home/diogocsousa27/MicroServices/demand-service/db/init.sql \
+  --from-file=init.sql=$HOME/MicroServices/demand-service/db/init.sql \
   -n urbanpulse
 
 kubectl create configmap revenue-db-init \
-  --from-file=init.sql=/home/diogocsousa27/MicroServices/revenue-service/db/init.sql \
+  --from-file=init.sql=$HOME/MicroServices/revenue-service/db/init.sql \
   -n urbanpulse
 
 kubectl create configmap trip-db-init \
-  --from-file=init.sql=/home/diogocsousa27/MicroServices/trip-service/db/init.sql \
+  --from-file=init.sql=$HOME/MicroServices/trip-service/db/init.sql \
   -n urbanpulse
 
 kubectl create configmap payment-db-init \
-  --from-file=init.sql=/home/diogocsousa27/MicroServices/payment-service/init.sql \
+  --from-file=init.sql=$HOME/MicroServices/payment-service/init.sql \
   -n urbanpulse
 ```
 
