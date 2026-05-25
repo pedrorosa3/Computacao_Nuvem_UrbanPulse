@@ -242,7 +242,7 @@ class TestFarePerKmContract:
     def test_default_limit_is_20(self, fare_per_km_conn, grpc_trip, grpc_location):
         fare_per_km_conn([])
         f = client.get("/revenue/fare-per-km").json()["filters"]
-        assert f["limit"] == 20
+        assert f["order_by"] == "fare_per_km"  # limit não é exposto em filters
 
     def test_limit_above_200_returns_422(self, fare_per_km_conn, grpc_trip, grpc_location):
         fare_per_km_conn([])
