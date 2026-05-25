@@ -21,7 +21,7 @@ SLOW_KMH        = 15.0
 FAST_KMH        = 30.0
 PAYMENT_MAP     = {1: "card", 2: "cash", 3: "no_charge", 4: "dispute"}
 CHUNK_SIZE      = 50000  # Process 50k rows at a time to avoid memory issues
-
+MAX_ROWS        = 10000
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 def classify_time(hour):
@@ -176,7 +176,7 @@ def ingest_trips(cloud_event):
         raise
 
     # ── Process CSV in chunks ─────────────────────────────────────────────────
-    print(f"Processing CSV in chunks of {CHUNK_SIZE} rows...")
+    print(f"Processing CSV in chunks of {CHUNK_SIZE} rows (max {MAX_ROWS} rows)...")
     total_inserted = 0
 
     for chunk in pd.read_csv(
@@ -188,11 +188,19 @@ def ingest_trips(cloud_event):
             "dropoff_zone_id", "dropoff_zone_name",
             "fare_amount", "tip_amount", "total_amount", "payment_type",
         ],
-        chunksize=CHUNK_SIZE
+        chunksize=CHUNK_SIZE,
+        nrows=MAX_ROWS,
     ):
+        remaining = MAX_ROWS - total_inserted
+        chunk = chunk.head(remaining)
+
         df_insert = process_chunk(chunk)
         df_insert.to_sql("trips", engine, if_exists="append", index=False)
         total_inserted += len(df_insert)
         print(f"Inserted {total_inserted} rows so far...")
+
+        if total_inserted >= MAX_ROWS:
+            print(f"Reached MAX_ROWS limit ({MAX_ROWS}). Stopping.")
+            break
 
     print(f"SUCCESS: {total_inserted} trips inserted from file {file_name}")
