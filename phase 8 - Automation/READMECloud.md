@@ -30,6 +30,10 @@ E dos ficheiros CSV:
 - Todos os deployment YAMLs devem apontar para as vossas images no artifact registry.
 - Se o seed correr antes do init.sql criar a tabela, o pandas cria-a sem a coluna `id`, o que causa erros no gRPC. Nesse caso, apagar e recriar a tabela manualmente.
 
+## FaaS — Trip Service (primeira vez apenas)
+
+> Para a configuração inicial do FaaS (bucket GCS, permissões, upload do CSV), seguir o **README_FaaS.md** — passos 1 a 5. Só é necessário fazer uma vez.
+
 ## 0 - Criar o Artifact Registry e fazer push das imagens (Mudar o fc60250 para o nome do vosso projeto)
 
 ```bash
@@ -153,6 +157,7 @@ kubectl get pods -n urbanpulse
 ## 7 - Popular a base de dados (seed)
 
 > Correr o seed DEPOIS dos pods estarem todos 1/1 Running, para garantir que as tabelas já foram criadas pelo init.sql.
+> **Nota:** O Trip Service não tem seed manual — os dados são inseridos automaticamente pela Cloud Function (ver passos FaaS abaixo).
 
 ```bash
 # Location
@@ -173,13 +178,6 @@ python3 seed.py
 kubectl port-forward svc/revenue-db 5433:5432 -n urbanpulse &
 sleep 2
 cd ~/MicroServices/revenue-service
-pip3 install pandas sqlalchemy psycopg2-binary
-python3 seed.py
-
-# Trip
-kubectl port-forward svc/trip-db 5436:5432 -n urbanpulse &
-sleep 2
-cd ~/MicroServices/trip-service
 pip3 install pandas sqlalchemy psycopg2-binary
 python3 seed.py
 
@@ -254,7 +252,68 @@ Para criar um dashboard: **Dashboards → New → New dashboard → Add visualiz
 
 > **Nota:** Os dashboards criados manualmente no Grafana perdem-se quando o cluster é apagado.
 
-## 11 - Expor os serviços
+## 11 - FaaS — Popular a Trip DB
+
+> Estes passos substituem o `seed.py` do Trip Service. A Cloud Function insere os dados automaticamente quando acionada.
+
+**11.1 — Expor a Trip DB como LoadBalancer**
+
+A Cloud Function corre fora do cluster GKE e não consegue aceder ao `ClusterIP`. É necessário expô-la temporariamente:
+
+```bash
+nano ~/kubernetesCloud/trip-service/trip-db-service.yaml
+# Mudar: type: ClusterIP → type: LoadBalancer
+
+kubectl apply -f ~/kubernetesCloud/trip-service/trip-db-service.yaml
+```
+
+Esperar 1-2 minutos e obter o IP externo:
+
+```bash
+kubectl get svc trip-db -n urbanpulse
+```
+
+Copiar o valor da coluna `EXTERNAL-IP`.
+
+**11.2 — Deploy da Cloud Function**
+
+```bash
+gcloud functions deploy trip-data-ingestion \
+  --gen2 \
+  --runtime=python311 \
+  --region=europe-west1 \
+  --source=/home/$USER/CloudFunction \
+  --entry-point=ingest_trips \
+  --trigger-event-filters="type=google.cloud.storage.object.v1.finalized" \
+  --trigger-event-filters="bucket=urbanpulse-trip-data" \
+  --set-env-vars DB_HOST=EXTERNAL_IP_DA_TRIP_DB,DB_PORT=5432,DB_NAME=trip_db,DB_USER=admin,DB_PASSWORD=isqueiro20 \
+  --memory=4Gi \
+  --timeout=540s
+```
+
+Substituir `EXTERNAL_IP_DA_TRIP_DB` pelo IP obtido acima.
+
+**11.3 — Acionar a função**
+
+```bash
+gcloud storage cp gs://urbanpulse-trip-data/yellow_tripdata_2015-01_clean.csv gs://urbanpulse-trip-data/trigger.csv
+```
+
+**11.4 — Acompanhar os logs**
+
+```bash
+gcloud functions logs read trip-data-ingestion --region=europe-west1 --gen2 --limit=20
+```
+
+**11.5 — Confirmar dados na DB**
+
+```bash
+kubectl port-forward svc/trip-db 5436:5432 -n urbanpulse &
+sleep 2
+psql -h localhost -p 5436 -U admin -d trip_db -c "SELECT COUNT(*) FROM trips;"
+```
+
+## 12 - Expor os serviços
 
 ```bash
 kubectl port-forward svc/location-api 8000:8000 -n urbanpulse &
@@ -265,7 +324,7 @@ kubectl port-forward svc/payment-svc 8006:8006 -n urbanpulse &
 kubectl port-forward svc/revenue-api 8007:8007 -n urbanpulse &
 ```
 
-## 12 - Testar os endpoints
+## 13 - Testar os endpoints
 
 Usar o Web Preview no Cloud Shell (ícone no topo) para testar. O `?authuser=2` deve estar sempre no fim do URL.
 
@@ -289,7 +348,7 @@ kubectl exec -it deploy/redis -n urbanpulse -- redis-cli KEYS '*'
 
 Apenas deve de contar quando são chamados endpoints que estão definidos a usar cache do redis.
 
-## 13 - Testar rollback
+## 14 - Testar rollback
 
 ```bash
 # Ver histórico de versões
@@ -304,6 +363,7 @@ kubectl rollout undo deployment/payment-deploy -n urbanpulse
 ## Como parar para não gastar créditos
 
 ```bash
+gcloud functions delete trip-data-ingestion --region=europe-west1 --gen2
 gcloud container clusters delete urbanpulse --zone=europe-west1-b
 ```
 
