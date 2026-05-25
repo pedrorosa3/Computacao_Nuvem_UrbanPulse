@@ -15,7 +15,7 @@ client = TestClient(app)
 
 
 # ---------------------------------------------------------------------------
-# Helpers 
+# Helpers (duplicados propositalmente — tests_pr.py é standalone)
 # ---------------------------------------------------------------------------
 
 def make_cursor(rows):
@@ -74,34 +74,34 @@ def monthly_rows(*tuples):
 
 
 # ---------------------------------------------------------------------------
-# API — /hourly-matrix
+# Contrato de API — /hourly-matrix
 # ---------------------------------------------------------------------------
 
 class TestHourlyMatrixContract:
 
     def test_day_of_week_values_0_to_6(self, hourly_conn):
         hourly_conn([])
-        matrix = client.get("/hourly-matrix").json()["matrix"]
+        matrix = client.get("/demand/hourly-matrix").json()["matrix"]
         assert [d["day_of_week"] for d in matrix] == list(range(7))
 
     def test_trip_count_is_integer(self, hourly_conn):
         hourly_conn(hourly_rows((0, 0, 42)))
-        h = client.get("/hourly-matrix").json()["matrix"][0]["hours"][0]
+        h = client.get("/demand/hourly-matrix").json()["matrix"][0]["hours"][0]
         assert isinstance(h["trip_count"], int)
 
     def test_is_peak_is_boolean(self, hourly_conn):
         hourly_conn([])
-        h = client.get("/hourly-matrix").json()["matrix"][0]["hours"][0]
+        h = client.get("/demand/hourly-matrix").json()["matrix"][0]["hours"][0]
         assert isinstance(h["is_peak"], bool)
 
     def test_overall_avg_is_float_or_int(self, hourly_conn):
         hourly_conn([])
-        avg = client.get("/hourly-matrix").json()["overall_avg_trips"]
+        avg = client.get("/demand/hourly-matrix").json()["overall_avg_trips"]
         assert isinstance(avg, (int, float))
 
     def test_all_3_filter_params_combined(self, hourly_conn):
         hourly_conn([])
-        r = client.get("/hourly-matrix?zone_id=10&year=2016&month=3")
+        r = client.get("/demand/hourly-matrix?zone_id=10&year=2016&month=3")
         assert r.status_code == 200
         f = r.json()["filters_applied"]
         assert f == {"zone_id": 10, "year": 2016, "month": 3}
@@ -118,49 +118,49 @@ class TestHourlyMatrixContract:
         # Substituir terça hora 0 por 13 (acima do threshold)
         base[24] = (1, 0, 13)
         hourly_conn(hourly_rows(*base))
-        matrix = client.get("/hourly-matrix").json()["matrix"]
+        matrix = client.get("/demand/hourly-matrix").json()["matrix"]
         assert matrix[0]["hours"][0]["is_peak"] is False  # 12 < 12.5
         assert matrix[1]["hours"][0]["is_peak"] is True   # 13 >= 12.5
 
 
 # ---------------------------------------------------------------------------
-#  API — /monthly-trend
+# Contrato de API — /monthly-trend
 # ---------------------------------------------------------------------------
 
 class TestMonthlyTrendContract:
 
     def test_trip_count_is_integer(self, monthly_conn):
         monthly_conn(monthly_rows((2015, 1, 500)))
-        entry = client.get("/monthly-trend").json()["months"][0]
+        entry = client.get("/demand/monthly-trend").json()["months"][0]
         assert isinstance(entry["trip_count"], int)
 
     def test_variation_percentage_is_float_or_none(self, monthly_conn):
         monthly_conn(monthly_rows((2015, 1, 1000), (2015, 2, 1500)))
-        months = client.get("/monthly-trend").json()["months"]
+        months = client.get("/demand/monthly-trend").json()["months"]
         assert months[0]["variation_percentage"] is None
         assert isinstance(months[1]["variation_percentage"], float)
 
     def test_trend_direction_valid_values(self, monthly_conn):
         monthly_conn([])
-        td = client.get("/monthly-trend").json()["trend_direction"]
+        td = client.get("/demand/monthly-trend").json()["trend_direction"]
         assert td in ("upward", "downward", "stable")
 
     def test_compare_by_default_month_in_filters(self, monthly_conn):
         monthly_conn([])
-        assert client.get("/monthly-trend").json()["filters_applied"]["compare_by"] == "month"
+        assert client.get("/demand/monthly-trend").json()["filters_applied"]["compare_by"] == "month"
 
     def test_compare_by_year_in_filters(self, monthly_conn):
         monthly_conn([])
-        assert client.get("/monthly-trend?compare_by=year").json()["filters_applied"]["compare_by"] == "year"
+        assert client.get("/demand/monthly-trend?compare_by=year").json()["filters_applied"]["compare_by"] == "year"
 
     def test_year_from_and_year_to_reflected(self, monthly_conn):
         monthly_conn([])
-        f = client.get("/monthly-trend?year_from=2015&year_to=2016").json()["filters_applied"]
+        f = client.get("/demand/monthly-trend?year_from=2015&year_to=2016").json()["filters_applied"]
         assert f["year_from"] == 2015 and f["year_to"] == 2016
 
     def test_variation_rounded_2_decimals(self, monthly_conn):
         monthly_conn(monthly_rows((2015, 1, 1000), (2015, 2, 1333)))
-        var = client.get("/monthly-trend").json()["months"][1]["variation_percentage"]
+        var = client.get("/demand/monthly-trend").json()["months"][1]["variation_percentage"]
         expected = round((1333 - 1000) / 1000 * 100, 2)
         assert var == expected
 
@@ -168,7 +168,7 @@ class TestMonthlyTrendContract:
         monthly_conn(monthly_rows(
             (2015, 1, 100), (2015, 6, 200), (2015, 12, 300), (2016, 3, 400)
         ))
-        months = client.get("/monthly-trend").json()["months"]
+        months = client.get("/demand/monthly-trend").json()["months"]
         pairs = [(m["year"], m["month"]) for m in months]
         assert pairs == sorted(pairs)
 
@@ -181,7 +181,7 @@ class TestMonthlyTrendContract:
             (2015, 1, 100), (2015, 2, 100), (2015, 3, 100),
             (2015, 4, 103), (2015, 5, 103), (2015, 6, 103),
         ))
-        assert client.get("/monthly-trend").json()["trend_direction"] == "upward"
+        assert client.get("/demand/monthly-trend").json()["trend_direction"] == "upward"
 
     def test_trend_stable_within_2pct(self, monthly_conn):
         """
@@ -192,4 +192,4 @@ class TestMonthlyTrendContract:
             (2015, 1, 100), (2015, 2, 100), (2015, 3, 100),
             (2015, 4, 101), (2015, 5, 101), (2015, 6, 101),
         ))
-        assert client.get("/monthly-trend").json()["trend_direction"] == "stable"
+        assert client.get("/demand/monthly-trend").json()["trend_direction"] == "stable"
