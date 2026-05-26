@@ -162,3 +162,68 @@ def test_anomalous_trips_invalid_score_too_low():
 
 def test_anomalous_trips_invalid_score_too_high():
     assert requests.get(f"{BASE}/analytics/anomalous-trips?min_suspicion_score=8").status_code == 422
+
+
+# ── Acceptance Tests ──────────────────────────────────────────────────────────
+# Verificam que o sistema cumpre os requisitos de negócio prometidos ao utilizador.
+
+def test_mobility_comparison_zone_classifications_fixed():
+    """Requisito: as classificações de zonas são fixas e conhecidas."""
+    r = requests.get(f"{BASE}/analytics/mobility-comparison")
+    classifications = r.json()["zone_classifications"]
+    assert classifications["affluent"] == "Manhattan Yellow Zone"
+    assert classifications["peripheral"] == "Bronx, Staten Island and Boro Zones"
+
+
+def test_mobility_comparison_affluent_dominates_market():
+    """Requisito de negócio: zonas affluent (Manhattan) têm maior quota de mercado."""
+    r = requests.get(f"{BASE}/analytics/mobility-comparison")
+    data = r.json()["comparison"]
+    affluent_share   = data["affluent"]["trip_volume"]["market_share_pct"]
+    peripheral_share = data["peripheral"]["trip_volume"]["market_share_pct"]
+    assert affluent_share > peripheral_share, "Manhattan deve ter maior quota de mercado"
+
+
+def test_mobility_comparison_market_share_in_range():
+    """Requisito: market_share_pct está entre 0 e 100 para ambos os grupos."""
+    r = requests.get(f"{BASE}/analytics/mobility-comparison")
+    data = r.json()["comparison"]
+    for group in ["affluent", "peripheral"]:
+        share = data[group]["trip_volume"]["market_share_pct"]
+        assert 0 <= share <= 100
+
+
+def test_mobility_gap_direction_correct():
+    """Requisito: mobility gap é positivo quando affluent tem mais quota que peripheral."""
+    r = requests.get(f"{BASE}/analytics/mobility-comparison")
+    data = r.json()
+    gap_key = "mobility_gap (Zonas Peripheral VS Affluent - Tudo em %)"
+    gap = data[gap_key]["trip_volume_gap_pct"]
+    affluent   = data["comparison"]["affluent"]["trip_volume"]["market_share_pct"]
+    peripheral = data["comparison"]["peripheral"]["trip_volume"]["market_share_pct"]
+    if affluent > peripheral:
+        assert gap > 0, "Gap deve ser positivo quando affluent domina o mercado"
+
+
+def test_anomalous_trips_labels_follow_business_rule():
+    """Requisito: labels de anomalia seguem a regra de negócio definida.
+
+    low = score 1 | high = score 2-3 | critical = score >= 4
+    """
+    r = requests.get(f"{BASE}/analytics/anomalous-trips?min_suspicion_score=1&limit=50")
+    for trip in r.json()["trips"]:
+        score = trip["suspicion_score"]
+        label = trip["anomaly_label"]
+        if score >= 4:
+            assert label == "critical", f"Score {score} devia ser critical, got {label}"
+        elif score >= 2:
+            assert label == "high", f"Score {score} devia ser high, got {label}"
+        else:
+            assert label == "low", f"Score {score} devia ser low, got {label}"
+
+
+def test_duration_tip_periods_are_valid():
+    """Requisito: períodos devolvidos são apenas peak, off_peak ou night."""
+    r = requests.get(f"{BASE}/analytics/duration-tip-correlation?limit=100")
+    for period_data in r.json()["by_period"]:
+        assert period_data["period"] in ["peak", "off_peak", "night"]
