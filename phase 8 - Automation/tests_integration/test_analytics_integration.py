@@ -202,7 +202,7 @@ def test_mobility_gap_direction_correct():
     affluent   = data["comparison"]["affluent"]["trip_volume"]["market_share_pct"]
     peripheral = data["comparison"]["peripheral"]["trip_volume"]["market_share_pct"]
     if affluent > peripheral:
-        assert gap > 0, "Gap deve ser positivo quando affluent domina o mercado"
+        assert gap > 0, "Gap deve ser positivo quando affluent domina o mercdo"
 
 
 def test_anomalous_trips_labels_follow_business_rule():
