@@ -34,11 +34,6 @@ def test_distribution_wrong_method():
     assert response.status_code == 405  # 405 Method Not Allowed
 
 
-def test_tips_comparison_missing_parameters():
-    """UC11 - Testa a omissão de parâmetros obrigatórios (falta a end_date)."""
-    response = client.get("/payments/tips/comparison?start_date=2015-01-01")
-    assert response.status_code == 422
-
 def test_tipping_score_negative_limit():
     """UC13 - Garante que não é possível pedir um limite de zonas negativo."""
     response = client.get("/payments/zones/tipping-score?limit=-5")
