@@ -132,3 +132,70 @@ def test_od_pairs_returns_data():
 def test_od_pairs_invalid_dates():
     r = requests.get(f"{BASE}/locations/pairs?start_date=2015-01-31&end_date=2015-01-01")
     assert r.status_code == 400
+
+
+# ── Acceptance Tests ──────────────────────────────────────────────────────────
+# Verificam que o sistema cumpre os requisitos de negócio prometidos ao utilizador.
+
+def test_pickup_ranking_sorted_by_trip_count():
+    """Requisito: zonas devolvidas ordenadas por número de viagens (desc)."""
+    r = requests.get(f"{BASE}/locations/pickup/ranking?limit=10")
+    counts = [z["trip_count"] for z in r.json()["zones"]]
+    assert counts == sorted(counts, reverse=True)
+
+
+def test_pickup_ranking_ranks_are_sequential():
+    """Requisito: ranks são sequenciais a partir de 1."""
+    r = requests.get(f"{BASE}/locations/pickup/ranking?limit=5")
+    ranks = [z["rank"] for z in r.json()["zones"]]
+    assert ranks == list(range(1, len(ranks) + 1))
+
+
+def test_pickup_ranking_market_share_positive():
+    """Requisito: market_share_pct é positivo para todas as zonas devolvidas."""
+    r = requests.get(f"{BASE}/locations/pickup/ranking?limit=5")
+    for zone in r.json()["zones"]:
+        assert zone["market_share_pct"] > 0
+
+
+def test_zone_profile_attractiveness_score_in_range():
+    """Requisito: attractiveness_score está entre 0 e 100."""
+    r = requests.get(f"{BASE}/locations/161/profile")
+    score = r.json()["attractiveness_score"]
+    assert 0 <= score <= 100
+
+
+def test_zone_profile_attractiveness_classification_valid():
+    """Requisito: attractiveness_classification é low, medium ou high."""
+    r = requests.get(f"{BASE}/locations/161/profile")
+    classification = r.json()["attractiveness_classification"]
+    assert classification in ["low", "medium", "high"]
+
+
+def test_zone_profile_volatility_classification_valid():
+    """Requisito: volatility_classification é low, medium ou high."""
+    r = requests.get(f"{BASE}/locations/161/profile")
+    demand = r.json()["demand_patterns"]
+    if demand:
+        assert demand["volatility_classification"] in ["low", "medium", "high"]
+
+
+def test_dropoffs_sorted_by_trip_count():
+    """Requisito: dropoffs ordenados por número de viagens (desc)."""
+    r = requests.get(f"{BASE}/locations/161/dropoffs?limit=10")
+    counts = [d["trip_count"] for d in r.json()["dropoffs"]]
+    assert counts == sorted(counts, reverse=True)
+
+
+def test_od_pairs_affinity_index_positive():
+    """Requisito: affinity_index é sempre positivo."""
+    r = requests.get(f"{BASE}/locations/pairs?min_trips=1&limit=5")
+    for pair in r.json()["pairs"]:
+        assert pair["affinity_index"] > 0
+
+
+def test_od_pairs_relative_frequency_in_range():
+    """Requisito: relative_frequency_pct está entre 0 e 100."""
+    r = requests.get(f"{BASE}/locations/pairs?min_trips=1&limit=5")
+    for pair in r.json()["pairs"]:
+        assert 0 < pair["relative_frequency_pct"] <= 100
