@@ -33,3 +33,20 @@ def test_payment_distribution():
     assert "total_trips" in data
     assert data["total_trips"] > 0
     assert "overall_distribution" in data
+
+
+def test_tipping_score_real_data():
+    """Garante que o ranking de zonas com melhores gorjetas (UC13) funciona com a BD real"""
+    r = requests.get(f"{BASE}/payments/zones/tipping-score?limit=3")
+    assert r.status_code == 200
+    data = r.json()
+    
+    # Verifica se devolveu uma lista
+    assert isinstance(data, list)
+    
+    # Se a BD tiver dados de 2015, a lista não deve estar vazia e deve respeitar o limite
+    if len(data) > 0:
+        assert len(data) <= 3
+        # Verifica se as chaves corretas existem no primeiro resultado
+        assert "zone_id" in data[0]
+        assert "average_tip_percentage" in data[0]
