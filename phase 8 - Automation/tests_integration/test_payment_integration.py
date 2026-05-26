@@ -49,4 +49,4 @@ def test_tipping_score_real_data():
         assert len(data) <= 3
         # Verifica se as chaves corretas existem no primeiro resultado
         assert "zone_id" in data[0]
-        assert "average_tip_percentage" in data[0]
+        assert "score" in data[0]
