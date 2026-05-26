@@ -1,0 +1,25 @@
+# Dataset CSVs — nunca commitar (ficheiros grandes)
+data/
+
+# Ficheiros da base de dados PostgreSQL — gerados localmente
+db-data/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.env
+venv/
+.venv/
+
+# IDEs
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Credenciais e configs sensíveis
+*.env
+secrets.yaml

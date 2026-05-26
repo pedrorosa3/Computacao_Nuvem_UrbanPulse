@@ -1,0 +1,83 @@
+syntax = "proto3";
+
+package trips;
+
+service TripService {
+  // UC14 — Payment Service: número de passageiros por viagem
+  rpc GetPassengerCounts (PassengerCountRequest) returns (PassengerCountResponse);
+
+  // UC18 — Analytics Service: duração das viagens
+  rpc GetTripDurations (TripDurationRequest) returns (TripDurationResponse);
+
+  // UC20 — Analytics Service: viagens suspeitas
+  rpc GetSuspiciousTrips (SuspiciousTripsRequest) returns (SuspiciousTripsResponse);
+
+  // UC10 — Revenue Service: distância média por zona (para cálculo de preço/km)
+  rpc GetDistanceByZone (DistanceByZoneRequest) returns (DistanceByZoneResponse);
+}
+
+// ── UC14 ─────────────────────────────────────────────────────────────────────
+message PassengerCountRequest {
+  repeated int32 trip_ids = 1;
+}
+
+message PassengerCountResponse {
+  map<int32, int32> trip_passengers = 1;
+}
+
+// ── UC18 ─────────────────────────────────────────────────────────────────────
+message TripDurationRequest {
+  repeated int32 trip_ids = 1;
+}
+
+message TripDurationInfo {
+  int32  trip_id       = 1;
+  float  duration_min  = 2;
+  float  distance_km   = 3;
+  string time_class    = 4;
+}
+
+message TripDurationResponse {
+  repeated TripDurationInfo trips = 1;
+}
+
+// ── UC20 ─────────────────────────────────────────────────────────────────────
+message SuspiciousTripsRequest {
+  int32  min_suspicion_score = 1;
+  string start_date          = 2;
+  string end_date            = 3;
+  int32  limit               = 4;
+}
+
+message SuspiciousTrip {
+  int32  trip_id          = 1;
+  float  trip_distance_km = 2;
+  float  fare_amount      = 3;
+  float  deviation_index  = 4;
+  string deviation_class  = 5;
+  int32  suspicion_score  = 6;
+  string pickup_zone      = 7;
+  string dropoff_zone     = 8;
+}
+
+message SuspiciousTripsResponse {
+  repeated SuspiciousTrip trips       = 1;
+  int32                   total_found = 2;
+}
+
+// ── UC10 ─────────────────────────────────────────────────────────────────────
+message DistanceByZoneRequest {
+  string zone_type = 1;  // "pickup" ou "dropoff"
+  int32  year      = 2;  // 0 = sem filtro
+  int32  month     = 3;  // 0 = sem filtro
+}
+
+message ZoneDistanceInfo {
+  int32 zone_id      = 1;
+  float avg_distance = 2;  // km médio das viagens nessa zona
+  int32 trip_count   = 3;  // nº de viagens consideradas
+}
+
+message DistanceByZoneResponse {
+  repeated ZoneDistanceInfo zones = 1;
+}

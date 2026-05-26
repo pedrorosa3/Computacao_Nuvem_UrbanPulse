@@ -1,0 +1,11 @@
+fastapi==0.115.0
+uvicorn==0.30.6
+pydantic==2.3.0
+grpcio==1.78.0
+grpcio-tools==1.78.0
+protobuf==6.31.1
+sqlalchemy
+psycopg2-binary
+fastapi-cache2[redis]
+redis
+prometheus-fastapi-instrumentator
