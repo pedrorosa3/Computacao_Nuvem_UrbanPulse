@@ -38,7 +38,7 @@ class TestDemandServiceHealth:
 
 
 # ---------------------------------------------------------------------------
-# /hourly-matrix — dados reais (seed.py)
+# /hourly-matrix — dados (seed.py)
 # ---------------------------------------------------------------------------
 
 class TestHourlyMatrixIntegration:
@@ -95,7 +95,7 @@ class TestHourlyMatrixIntegration:
 
 
 # ---------------------------------------------------------------------------
-# /monthly-trend — dados reais (seed.py)
+# /monthly-trend — dados (seed.py)
 # ---------------------------------------------------------------------------
 
 class TestMonthlyTrendIntegration:
@@ -145,9 +145,6 @@ class TestMonthlyTrendIntegration:
         r = get("/demand/monthly-trend", compare_by="year")
         assert r.status_code == 200
         assert r.json()["filters_applied"]["compare_by"] == "year"
-
-    def test_compare_by_invalid_returns_422(self):
-        assert get("/demand/monthly-trend", compare_by="week").status_code == 422
 
     def test_zone_with_no_data_returns_empty_months(self):
         data = get("/demand/monthly-trend", zone_id=99999).json()

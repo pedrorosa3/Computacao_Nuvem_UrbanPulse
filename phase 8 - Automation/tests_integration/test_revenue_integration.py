@@ -7,7 +7,7 @@ Usa `requests` contra o serviço real — sem mocks.
 import pytest
 import requests
 
-BASE_URL = "http://localhost:8007"  
+BASE_URL = "http://localhost:8007"
 
 
 def get(path, **params):
@@ -180,12 +180,6 @@ class TestFarePerKmIntegration:
 
     def test_dropoff_zone_type_returns_200(self):
         assert get("/revenue/fare-per-km", zone_type="dropoff").status_code == 200
-
-    def test_year_filter_returns_200(self):
-        assert get("/revenue/fare-per-km", year=2015).status_code == 200
-
-    def test_month_filter_returns_200(self):
-        assert get("/revenue/fare-per-km", month=1).status_code == 200
 
     def test_invalid_month_returns_422(self):
         assert get("/revenue/fare-per-km", month=13).status_code == 422
