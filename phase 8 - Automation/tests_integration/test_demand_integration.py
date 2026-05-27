@@ -7,7 +7,7 @@ Usa `requests` contra o serviço real — sem mocks.
 import pytest
 import requests
 
-BASE_URL = "http://localhost:8002"  # ajusta à porta do demand-service no docker-compose-test.yml
+BASE_URL = "http://localhost:8002"
 
 
 def get(path, **params):
@@ -15,7 +15,7 @@ def get(path, **params):
 
 
 # ---------------------------------------------------------------------------
-# Smoke tests — serviço está vivo
+# Smoke tests
 # ---------------------------------------------------------------------------
 
 class TestDemandServiceHealth:
