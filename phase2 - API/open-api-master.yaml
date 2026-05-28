@@ -1,0 +1,500 @@
+openapi: 3.0.3
+info:
+  title: UrbanPulse — API Gateway (Master Documentation)
+  description: Documentação unificada e atualizada dos 6 microserviços do projeto UrbanPulse.
+  version: 1.0.0
+
+tags:
+  - name: Analytics
+    description: UC18 a UC20 — Coeficientes, correlações inter-serviços e anomalias.
+  - name: Demand
+    description: UC15 a UC17 — Análise de procura, tendências e volatilidade.
+  - name: Location
+    description: UC04 a UC07 — Dinâmicas geográficas e perfis de zonas.
+  - name: Payment
+    description: UC11 a UC14 — Análise de gorjetas e métodos de pagamento.
+  - name: Revenue
+    description: UC08 a UC10 — Preços, tarifas e receitas.
+  - name: Trip
+    description: UC01 a UC03, UC21, UC22 — Ingestão e classificação técnica de viagens.
+
+paths:
+  # =======================================================================
+  # 1. ANALYTICS SERVICE
+  # =======================================================================
+  /analytics/duration-tip-correlation:
+    get:
+      tags: [Analytics]
+      summary: UC18 — Correlação duração vs gorjeta
+      description: Calcula a correlação de Pearson usando dados do Trip e Payment Service.
+      parameters:
+        - name: limit
+          in: query
+          description: Número de viagens a analisar (entre 10 e 2000).
+          schema:
+            type: integer
+            default: 500
+      responses:
+        '200':
+          description: Sucesso.
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+  /analytics/mobility-comparison:
+    get:
+      tags: [Analytics]
+      summary: UC19 — Comparação de padrões de mobilidade
+      description: Compara zonas affluent (Yellow Zone) com peripheral (Bronx, Boro, etc).
+      parameters:
+        - $ref: '#/components/parameters/StartDate'
+        - $ref: '#/components/parameters/EndDate'
+      responses:
+        '200':
+          description: Sucesso.
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+  /analytics/anomalous-trips:
+    get:
+      tags: [Analytics]
+      summary: UC20 — Viagens anómalas
+      description: Deteção de viagens suspeitas cruzando Trip Service com Revenue Service.
+      parameters:
+        - name: min_suspicion_score
+          in: query
+          description: Score mínimo (1-7).
+          schema:
+            type: integer
+            default: 1
+        - $ref: '#/components/parameters/StartDate'
+        - $ref: '#/components/parameters/EndDate'
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        '200':
+          description: Lista de viagens suspeitas.
+
+  # =======================================================================
+  # 2. DEMAND SERVICE
+  # =======================================================================
+  /demand/hourly-matrix:
+    get:
+      tags: [Demand]
+      summary: UC15 — Trip count matrix by hour and day of week
+      parameters:
+        - $ref: '#/components/parameters/ZoneIdQuery'
+        - $ref: '#/components/parameters/Year'
+        - $ref: '#/components/parameters/Month'
+      responses:
+        '200':
+          description: Matriz horária.
+
+  /demand/monthly-trend:
+    get:
+      tags: [Demand]
+      summary: UC16 — Monthly trip volume trend
+      parameters:
+        - $ref: '#/components/parameters/ZoneIdQuery'
+        - name: year_from
+          in: query
+          schema:
+            type: integer
+        - name: year_to
+          in: query
+          schema:
+            type: integer
+        - name: compare_by
+          in: query
+          schema:
+            type: string
+            enum: [month, year]
+            default: month
+      responses:
+        '200':
+          description: Tendência mensal calculada.
+
+  /demand/zone-volatility:
+    get:
+      tags: [Demand]
+      summary: UC17 — Zone demand volatility over the day
+      parameters:
+        - name: zone_id
+          in: query
+          required: true
+          schema:
+            type: integer
+        - $ref: '#/components/parameters/Year'
+        - $ref: '#/components/parameters/Month'
+      responses:
+        '200':
+          description: Métricas de volatilidade (CV e Desvio Padrão).
+
+  # =======================================================================
+  # 3. LOCATION SERVICE
+  # =======================================================================
+  /locations/zones:
+    get:
+      tags: [Location]
+      summary: Listagem total de zonas (Com classificação Affluent/Peripheral)
+      responses:
+        '200':
+          description: Lista de zonas.
+
+  /locations/pickup/ranking:
+    get:
+      tags: [Location]
+      summary: UC04 — Pickup zone ranking with market share
+      parameters:
+        - $ref: '#/components/parameters/StartDate'
+        - $ref: '#/components/parameters/EndDate'
+        - $ref: '#/components/parameters/LimitDefault10'
+      responses:
+        '200':
+          description: Ranking gerado.
+
+  /locations/{zone_id}/dropoffs:
+    get:
+      tags: [Location]
+      summary: UC05 — Top dropoff zones from a specific pickup zone
+      parameters:
+        - $ref: '#/components/parameters/ZoneIdPath'
+        - $ref: '#/components/parameters/LimitDefault10'
+        - $ref: '#/components/parameters/StartDate'
+        - $ref: '#/components/parameters/EndDate'
+      responses:
+        '200':
+          description: Top destinos.
+
+  /locations/pairs:
+    get:
+      tags: [Location]
+      summary: UC06 — Origin-destination pairs with affinity index
+      parameters:
+        - $ref: '#/components/parameters/StartDate'
+        - $ref: '#/components/parameters/EndDate'
+        - $ref: '#/components/parameters/LimitDefault20'
+        - name: min_trips
+          in: query
+          schema:
+            type: integer
+            default: 100
+      responses:
+        '200':
+          description: Pares O-D calculados.
+
+  /locations/{zone_id}/profile:
+    get:
+      tags: [Location]
+      summary: UC07 — Full zone profile with attractiveness score
+      parameters:
+        - $ref: '#/components/parameters/ZoneIdPath'
+        - $ref: '#/components/parameters/StartDate'
+        - $ref: '#/components/parameters/EndDate'
+      responses:
+        '200':
+          description: Perfil completo da zona.
+
+  # =======================================================================
+  # 4. PAYMENT SERVICE
+  # =======================================================================
+  /payments/tips/comparison:
+    get:
+      tags: [Payment]
+      summary: UC11 — Comparação de gorjetas (Cartão vs Dinheiro)
+      parameters:
+        - $ref: '#/components/parameters/StartDate'
+        - $ref: '#/components/parameters/EndDate'
+      responses:
+        '200':
+          description: Estatísticas comparativas.
+
+  /payments/distribution:
+    get:
+      tags: [Payment]
+      summary: UC12 — Distribuição percentual de métodos de pagamento
+      responses:
+        '200':
+          description: Distribuição agregada.
+
+  /payments/zones/tipping-score:
+    get:
+      tags: [Payment]
+      summary: UC13 — Ranking de zonas por Tipping Score (só cartão)
+      parameters:
+        - $ref: '#/components/parameters/LimitDefault10'
+      responses:
+        '200':
+          description: Ranking das zonas mais generosas.
+
+  /payments/tips/passenger-correlation:
+    get:
+      tags: [Payment]
+      summary: UC14 — Correlação entre passageiros e gorjeta
+      parameters:
+        - $ref: '#/components/parameters/StartDate'
+        - $ref: '#/components/parameters/EndDate'
+      responses:
+        '200':
+          description: Correlação calculada.
+
+  # =======================================================================
+  # 5. REVENUE SERVICE
+  # =======================================================================
+  /revenue/avg-fare-by-zone:
+    get:
+      tags: [Revenue]
+      summary: UC08 – Average fare per zone with deviation
+      parameters:
+        - $ref: '#/components/parameters/ZoneType'
+        - $ref: '#/components/parameters/ZoneIdQuery'
+        - $ref: '#/components/parameters/StartDate'
+        - $ref: '#/components/parameters/EndDate'
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+        - $ref: '#/components/parameters/LimitDefault20'
+      responses:
+        '200':
+          description: Tarifas médias.
+
+  /revenue/breakdown:
+    get:
+      tags: [Revenue]
+      summary: UC09 – Percentage breakdown of trip revenue
+      parameters:
+        - $ref: '#/components/parameters/ZoneIdQuery'
+        - $ref: '#/components/parameters/ZoneType'
+        - $ref: '#/components/parameters/StartDate'
+        - $ref: '#/components/parameters/EndDate'
+      responses:
+        '200':
+          description: Componentes de receita desagregados.
+
+  /revenue/fare-per-km:
+    get:
+      tags: [Revenue]
+      summary: UC10 – Fare per km by zone
+      parameters:
+        - $ref: '#/components/parameters/ZoneType'
+        - $ref: '#/components/parameters/Year'
+        - $ref: '#/components/parameters/Month'
+        - name: order_by
+          in: query
+          schema:
+            type: string
+            enum: [fare_per_km, zone_id]
+            default: fare_per_km
+        - $ref: '#/components/parameters/LimitDefault20'
+      responses:
+        '200':
+          description: Rácio de tarifa por Km.
+
+  # =======================================================================
+  # 6. TRIP SERVICE
+  # =======================================================================
+  /trips/classification/time-of-day:
+    get:
+      tags: [Trip]
+      summary: UC01 — Classify trips by time of day
+      parameters:
+        - $ref: '#/components/parameters/StartDate'
+        - $ref: '#/components/parameters/EndDate'
+        - name: pickup_zone_id
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Distribuição por pico / fora de pico / noite.
+
+  /trips/route-deviation:
+    get:
+      tags: [Trip]
+      summary: UC02 — Route deviation index
+      parameters:
+        - $ref: '#/components/parameters/StartDate'
+        - $ref: '#/components/parameters/EndDate'
+        - name: pickup_zone_id
+          in: query
+          schema:
+            type: integer
+        - $ref: '#/components/parameters/LimitDefault20'
+        - name: summary_only
+          in: query
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Classificação de desvio da rota (RDI).
+
+  /trips/speed/zones:
+    get:
+      tags: [Trip]
+      summary: UC03 — Average speed per zone and period
+      parameters:
+        - $ref: '#/components/parameters/StartDate'
+        - $ref: '#/components/parameters/EndDate'
+        - name: pickup_zone_id
+          in: query
+          schema:
+            type: integer
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [peak, off_peak, night]
+        - $ref: '#/components/parameters/LimitDefault20'
+      responses:
+        '200':
+          description: Velocidade agregada por período do dia.
+
+  /trips:
+    post:
+      tags: [Trip]
+      summary: UC22 — Submit a new trip record for analysis
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TripSubmission'
+      responses:
+        '201':
+          description: Viagem criada e enriquecida.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /trips/invalid/bulk:
+    delete:
+      tags: [Trip]
+      summary: UC21 — Bulk-remove invalid trips
+      description: Apaga viagens com dados corrompidos (distâncias negativas, sem zona, etc).
+      parameters:
+        - name: dry_run
+          in: query
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Operação executada ou simulada com sucesso.
+
+# =======================================================================
+# COMPONENTES GLOBAIS E PARAMETRIZAÇÕES
+# =======================================================================
+components:
+  parameters:
+    StartDate:
+      name: start_date
+      in: query
+      schema:
+        type: string
+        format: date
+        example: "2015-01-01"
+    EndDate:
+      name: end_date
+      in: query
+      schema:
+        type: string
+        format: date
+        example: "2015-12-31"
+    Year:
+      name: year
+      in: query
+      schema:
+        type: integer
+        example: 2015
+    Month:
+      name: month
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 12
+    ZoneIdPath:
+      name: zone_id
+      in: path
+      required: true
+      schema:
+        type: integer
+        example: 161
+    ZoneIdQuery:
+      name: zone_id
+      in: query
+      schema:
+        type: integer
+        example: 161
+    ZoneType:
+      name: zone_type
+      in: query
+      schema:
+        type: string
+        enum: [pickup, dropoff]
+        default: pickup
+    LimitDefault10:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        default: 10
+    LimitDefault20:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        default: 20
+
+  responses:
+    BadRequest:
+      description: Parâmetros inválidos.
+    ServiceUnavailable:
+      description: Falha na ligação gRPC a outro microserviço.
+
+  schemas:
+    TripSubmission:
+      type: object
+      required:
+        - pickup_datetime
+        - dropoff_datetime
+        - passenger_count
+        - trip_distance_km
+        - pickup_zone_id
+        - pickup_zone_name
+        - dropoff_zone_id
+        - dropoff_zone_name
+        - fare_amount
+        - payment_type
+      properties:
+        pickup_datetime:
+          type: string
+          format: date-time
+        dropoff_datetime:
+          type: string
+          format: date-time
+        passenger_count:
+          type: integer
+        trip_distance_km:
+          type: number
+        pickup_zone_id:
+          type: integer
+        pickup_zone_name:
+          type: string
+        dropoff_zone_id:
+          type: integer
+        dropoff_zone_name:
+          type: string
+        fare_amount:
+          type: number
+        tip_amount:
+          type: number
+          default: 0.0
+        payment_type:
+          type: integer
+          description: "1=card 2=cash 3=no_charge 4=dispute"
