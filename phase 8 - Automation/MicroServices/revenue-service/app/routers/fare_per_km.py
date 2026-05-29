@@ -82,11 +82,14 @@ def fare_per_km(
     conditions = ["fare_amount > 0"]
     params: list = []
 
+    # =======================================================================
+    # Resolução para o problema da diferença da API para a BD 'pickup_date' 
+    # =======================================================================
     if year:
-        conditions.append("pickup_year = %s")
+        conditions.append("EXTRACT(YEAR FROM pickup_date) = %s")
         params.append(year)
     if month:
-        conditions.append("pickup_month = %s")
+        conditions.append("EXTRACT(MONTH FROM pickup_date) = %s")
         params.append(month)
 
     where = "WHERE " + " AND ".join(conditions)
@@ -125,7 +128,7 @@ def fare_per_km(
                 zone_type=zone_type,
                 year=year if year else 0,
                 month=month if month else 0,
-            ),
+                ),
             timeout=10,
         )
     except grpc.RpcError as e:
