@@ -4,6 +4,10 @@ info:
   description: Documentação unificada e atualizada dos 6 microserviços do projeto UrbanPulse.
   version: 1.0.0
 
+servers:
+  - url: http://localhost:8006
+    description: Payment Service (Muda a porta aqui para testar outros)
+
 tags:
   - name: Analytics
     description: UC18 a UC20 — Coeficientes, correlações inter-serviços e anomalias.
