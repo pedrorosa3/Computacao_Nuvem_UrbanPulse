@@ -47,7 +47,6 @@ spec:
             - containerPort: 50054
               name: grpc
           resources:
-            resources:
               requests:
                 cpu: "75m"
                 memory: "192Mi"

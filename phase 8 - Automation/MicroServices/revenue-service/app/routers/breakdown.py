@@ -105,7 +105,20 @@ def revenue_breakdown(
         raise HTTPException(status_code=500, detail=str(e))
 
     if not row or row["trip_count"] == 0:
-        raise HTTPException(status_code=404, detail="No trips found for the given filters.")
+        return {
+            "filters_applied": {
+                "zone_id":    zone_id,
+                "zone_name":  None,
+                "borough":    None,
+                "zone_type":  zone_type,
+                "start_date": start_date,
+                "end_date":   end_date,
+            },
+            "trip_count": 0,
+            "avg_total_amount": 0.0,
+            "breakdown": {},
+            "message": "No trips found for the given filters.",
+        }
 
     # ── gRPC ao Location Service (só se foi passado zone_id)
     zone_name = None

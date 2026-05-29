@@ -42,13 +42,12 @@ spec:
             - name: TRIP_SERVICE_URL
               value: "trip-api:50051"
           resources:
-            resources:
-              requests:
-                cpu: "50m"
-                memory: "128Mi"
-              limits:
-                cpu: "200m"
-                memory: "256Mi"
+            requests:
+              cpu: "50m"
+              memory: "128Mi"
+            limits:
+              cpu: "200m"
+              memory: "256Mi"
           livenessProbe:
             httpGet:
               path: /payments/health
