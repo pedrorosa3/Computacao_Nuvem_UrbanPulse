@@ -83,7 +83,7 @@ def fare_per_km(
     params: list = []
 
     # =======================================================================
-    # Resolução para o problema da diferença da API para a BD 'pickup_date' 
+    # Resolver o problema do 'pickup_date'
     # =======================================================================
     if year:
         conditions.append("EXTRACT(YEAR FROM pickup_date) = %s")
