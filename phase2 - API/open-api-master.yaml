@@ -37,6 +37,10 @@ paths:
       responses:
         '200':
           description: Sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DurationTipCorrelation'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
 
@@ -51,6 +55,10 @@ paths:
       responses:
         '200':
           description: Sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MobilityComparison'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
 
@@ -76,6 +84,10 @@ paths:
       responses:
         '200':
           description: Lista de viagens suspeitas.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnomalousTrips'
 
   # =======================================================================
   # 2. DEMAND SERVICE
@@ -91,6 +103,10 @@ paths:
       responses:
         '200':
           description: Matriz horária.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HourlyMatrix'
 
   /demand/monthly-trend:
     get:
@@ -115,6 +131,10 @@ paths:
       responses:
         '200':
           description: Tendência mensal calculada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MonthlyTrend'
 
   /demand/zone-volatility:
     get:
@@ -131,6 +151,10 @@ paths:
       responses:
         '200':
           description: Métricas de volatilidade (CV e Desvio Padrão).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ZoneVolatility'
 
   # =======================================================================
   # 3. LOCATION SERVICE
@@ -142,6 +166,12 @@ paths:
       responses:
         '200':
           description: Lista de zonas.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ZoneBasic'
 
   /locations/pickup/ranking:
     get:
@@ -154,6 +184,10 @@ paths:
       responses:
         '200':
           description: Ranking gerado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PickupRanking'
 
   /locations/{zone_id}/dropoffs:
     get:
@@ -167,6 +201,10 @@ paths:
       responses:
         '200':
           description: Top destinos.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DropoffRanking'
 
   /locations/pairs:
     get:
@@ -184,6 +222,10 @@ paths:
       responses:
         '200':
           description: Pares O-D calculados.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ODPairs'
 
   /locations/{zone_id}/profile:
     get:
@@ -196,6 +238,10 @@ paths:
       responses:
         '200':
           description: Perfil completo da zona.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ZoneProfile'
 
   # =======================================================================
   # 4. PAYMENT SERVICE
@@ -210,6 +256,10 @@ paths:
       responses:
         '200':
           description: Estatísticas comparativas.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TipComparisonResponse'
 
   /payments/distribution:
     get:
@@ -218,6 +268,10 @@ paths:
       responses:
         '200':
           description: Distribuição agregada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentDistributionResponse'
 
   /payments/zones/tipping-score:
     get:
@@ -228,6 +282,12 @@ paths:
       responses:
         '200':
           description: Ranking das zonas mais generosas.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ZoneTippingScore'
 
   /payments/tips/passenger-correlation:
     get:
@@ -239,6 +299,10 @@ paths:
       responses:
         '200':
           description: Correlação calculada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PassengerTipCorrelation'
 
   # =======================================================================
   # 5. REVENUE SERVICE
@@ -262,6 +326,10 @@ paths:
       responses:
         '200':
           description: Tarifas médias.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AvgFareByZone'
 
   /revenue/breakdown:
     get:
@@ -275,6 +343,10 @@ paths:
       responses:
         '200':
           description: Componentes de receita desagregados.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RevenueBreakdown'
 
   /revenue/fare-per-km:
     get:
@@ -294,6 +366,10 @@ paths:
       responses:
         '200':
           description: Rácio de tarifa por Km.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FarePerKm'
 
   # =======================================================================
   # 6. TRIP SERVICE
@@ -312,6 +388,10 @@ paths:
       responses:
         '200':
           description: Distribuição por pico / fora de pico / noite.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TimeOfDayClassification'
 
   /trips/route-deviation:
     get:
@@ -333,6 +413,10 @@ paths:
       responses:
         '200':
           description: Classificação de desvio da rota (RDI).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RouteDeviation'
 
   /trips/speed/zones:
     get:
@@ -354,6 +438,10 @@ paths:
       responses:
         '200':
           description: Velocidade agregada por período do dia.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpeedZones'
 
   /trips:
     post:
@@ -368,6 +456,10 @@ paths:
       responses:
         '201':
           description: Viagem criada e enriquecida.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TripSubmissionResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
 
@@ -385,6 +477,10 @@ paths:
       responses:
         '200':
           description: Operação executada ou simulada com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulkDeleteResponse'
 
 # =======================================================================
 # COMPONENTES GLOBAIS E PARAMETRIZAÇÕES
@@ -458,6 +554,154 @@ components:
       description: Falha na ligação gRPC a outro microserviço.
 
   schemas:
+    # ========================== ANALYTICS SCHEMAS ==========================
+    DurationTipCorrelation:
+      type: object
+      properties:
+        total_trips_analysed: { type: integer }
+        global_pearson_correlation: { type: number, format: float }
+        by_period: { type: array, items: { type: object } }
+
+    MobilityComparison:
+      type: object
+      properties:
+        total_trips: { type: integer }
+        mobility_gap: { type: object }
+        comparison: { type: object }
+
+    AnomalousTrips:
+      type: object
+      properties:
+        total_found: { type: integer }
+        returned: { type: integer }
+        trips:
+          type: array
+          items:
+            $ref: '#/components/schemas/SuspiciousTrip'
+
+    SuspiciousTrip:
+      type: object
+      properties:
+        trip_id: { type: string }
+        suspicion_score: { type: integer }
+        anomaly_label: { type: string }
+
+    # ========================== DEMAND SCHEMAS ==========================
+    HourlyMatrix:
+      type: object
+      properties:
+        overall_avg_trips: { type: number, format: float }
+        matrix: { type: array, items: { type: object } }
+
+    MonthlyTrend:
+      type: object
+      properties:
+        trend_direction: { type: string }
+        months: { type: array, items: { type: object } }
+
+    ZoneVolatility:
+      type: object
+      properties:
+        zone_id: { type: integer }
+        volatility_metrics: { type: object }
+
+    # ========================== LOCATION SCHEMAS ==========================
+    ZoneBasic:
+      type: object
+      properties:
+        zone_id: { type: integer }
+        zone_name: { type: string }
+        classification: { type: string }
+
+    PickupRanking:
+      type: object
+      properties:
+        total_trips: { type: integer }
+        zones: { type: array, items: { type: object } }
+
+    DropoffRanking:
+      type: object
+      properties:
+        origin_zone: { type: object }
+        dropoffs: { type: array, items: { type: object } }
+
+    ODPairs:
+      type: object
+      properties:
+        total_trips: { type: integer }
+        pairs: { type: array, items: { type: object } }
+
+    ZoneProfile:
+      type: object
+      properties:
+        zone_id: { type: integer }
+        attractiveness_score: { type: number, format: float }
+
+    # ========================== PAYMENT SCHEMAS ==========================
+    TipComparisonResponse:
+      type: object
+      properties:
+        card_average_tip_percentage: { type: number, format: float }
+        cash_average_tip_percentage: { type: number, format: float }
+        difference_points: { type: number, format: float }
+
+    PaymentDistributionResponse:
+      type: object
+      properties:
+        total_trips: { type: integer }
+        overall_distribution: { type: object }
+
+    ZoneTippingScore:
+      type: object
+      properties:
+        zone_id: { type: integer }
+        score: { type: number, format: float }
+
+    PassengerTipCorrelation:
+      type: object
+      properties:
+        analyzed_trips: { type: integer }
+        correlation_coefficient: { type: number, format: float }
+
+    # ========================== REVENUE SCHEMAS ==========================
+    AvgFareByZone:
+      type: object
+      properties:
+        global_avg_fare: { type: number, format: float }
+        zones: { type: array, items: { type: object } }
+
+    RevenueBreakdown:
+      type: object
+      properties:
+        trip_count: { type: integer }
+        avg_total_amount: { type: number, format: float }
+        breakdown: { type: object }
+
+    FarePerKm:
+      type: object
+      properties:
+        total: { type: integer }
+        results: { type: array, items: { type: object } }
+
+    # ========================== TRIP SCHEMAS ==========================
+    TimeOfDayClassification:
+      type: object
+      properties:
+        total_trips: { type: integer }
+        periods: { type: array, items: { type: object } }
+
+    RouteDeviation:
+      type: object
+      properties:
+        total_trips_analysed: { type: integer }
+        summary: { type: array, items: { type: object } }
+
+    SpeedZones:
+      type: object
+      properties:
+        total_results: { type: integer }
+        zones: { type: array, items: { type: object } }
+
     TripSubmission:
       type: object
       required:
@@ -472,29 +716,32 @@ components:
         - fare_amount
         - payment_type
       properties:
-        pickup_datetime:
-          type: string
-          format: date-time
-        dropoff_datetime:
-          type: string
-          format: date-time
-        passenger_count:
-          type: integer
-        trip_distance_km:
-          type: number
-        pickup_zone_id:
-          type: integer
-        pickup_zone_name:
-          type: string
-        dropoff_zone_id:
-          type: integer
-        dropoff_zone_name:
-          type: string
-        fare_amount:
-          type: number
-        tip_amount:
-          type: number
-          default: 0.0
-        payment_type:
-          type: integer
-          description: "1=card 2=cash 3=no_charge 4=dispute"
+        pickup_datetime: { type: string, format: date-time }
+        dropoff_datetime: { type: string, format: date-time }
+        passenger_count: { type: integer }
+        trip_distance_km: { type: number }
+        pickup_zone_id: { type: integer }
+        pickup_zone_name: { type: string }
+        dropoff_zone_id: { type: integer }
+        dropoff_zone_name: { type: string }
+        fare_amount: { type: number }
+        tip_amount: { type: number, default: 0.0 }
+        payment_type: { type: integer, description: "1=card 2=cash 3=no_charge 4=dispute" }
+
+    TripSubmissionResponse:
+      type: object
+      properties:
+        trip_id: { type: integer }
+        message: { type: string }
+        enriched:
+          type: object
+          properties:
+            time_class: { type: string }
+            deviation_index: { type: number, format: float }
+
+    BulkDeleteResponse:
+      type: object
+      properties:
+        dry_run: { type: boolean }
+        deleted_trips: { type: integer }
+        message: { type: string }
