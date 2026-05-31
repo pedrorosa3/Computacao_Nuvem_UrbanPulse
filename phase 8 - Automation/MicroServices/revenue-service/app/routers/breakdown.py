@@ -52,17 +52,33 @@ def revenue_breakdown(
     if start_date and end_date and end_date < start_date:
         raise HTTPException(status_code=400, detail="end_date must be after start_date")
 
+    # ── Validar se zone_id existe via gRPC (ANTES da query)
+    zone_name = None
+    borough = None
+    if zone_id is not None:
+        try:
+            stub = _get_location_stub()
+            loc_response = stub.GetZoneName(
+                location_service_pb2.ZoneNameRequest(zone_id=zone_id),
+                timeout=5,
+            )
+            zone_name = loc_response.zone_name or None
+            borough = loc_response.borough or None
+            if not zone_name:
+                raise HTTPException(status_code=404, detail="Zone not found.")
+        except grpc.RpcError:
+            raise HTTPException(status_code=404, detail="Zone not found.")
+
     use_cache = (
-    zone_id is None and
-    start_date is None and
-    end_date is None
+        zone_id is None and
+        start_date is None and
+        end_date is None
     )
 
-    cache_key = f"revenue:breakdown:zone_type:{zone_type}:v1"   
+    cache_key = f"revenue:breakdown:zone_type:{zone_type}:v1"
 
     if use_cache:
         cached_response = _cache_get(cache_key)
-
         if cached_response is not None:
             return cached_response
 
@@ -108,8 +124,8 @@ def revenue_breakdown(
         return {
             "filters_applied": {
                 "zone_id":    zone_id,
-                "zone_name":  None,
-                "borough":    None,
+                "zone_name":  zone_name,
+                "borough":    borough,
                 "zone_type":  zone_type,
                 "start_date": start_date,
                 "end_date":   end_date,
@@ -119,21 +135,6 @@ def revenue_breakdown(
             "breakdown": {},
             "message": "No trips found for the given filters.",
         }
-
-    # ── gRPC ao Location Service (só se foi passado zone_id)
-    zone_name = None
-    borough = None
-    if zone_id is not None:
-        try:
-            stub = _get_location_stub()
-            loc_response = stub.GetZoneName(
-                location_service_pb2.ZoneNameRequest(zone_id=zone_id),
-                timeout=5,
-            )
-            zone_name = loc_response.zone_name or None
-            borough = loc_response.borough or None
-        except grpc.RpcError:
-            pass
 
     avg_total = float(row["avg_total"])
     avg_fare = float(row["avg_fare"])
@@ -166,6 +167,8 @@ def revenue_breakdown(
             "extra":                 {"avg": round(avg_extra, 2), "percentage": pct(avg_extra)},
         },
     }
+
     if use_cache:
         _cache_set(cache_key, response)
+
     return response
