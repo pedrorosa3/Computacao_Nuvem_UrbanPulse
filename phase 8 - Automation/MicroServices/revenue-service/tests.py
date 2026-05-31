@@ -256,15 +256,21 @@ class TestBreakdownStructure:
             assert "avg" in bd[key]
             assert "percentage" in bd[key]
 
-    def test_no_data_returns_404(self, breakdown_conn, mock_grpc_location):
-        breakdown_conn({"trip_count": 0})
-        mock_grpc_location()
-        assert client.get("/revenue/breakdown").status_code == 404
+    def test_no_data_returns_200_with_empty(self, breakdown_conn, mock_grpc_location):
+            breakdown_conn({"trip_count": 0})
+            mock_grpc_location()
+            response = client.get("/revenue/breakdown")
+            assert response.status_code == 200
+            assert response.json()["trip_count"] == 0
+            assert response.json()["message"] == "No trips found for the given filters."
 
-    def test_null_row_returns_404(self, breakdown_conn, mock_grpc_location):
+    def test_null_row_returns_200_with_empty(self, breakdown_conn, mock_grpc_location):
         breakdown_conn(None)
         mock_grpc_location()
-        assert client.get("/revenue/breakdown").status_code == 404
+        response = client.get("/revenue/breakdown")
+        assert response.status_code == 200
+        assert response.json()["trip_count"] == 0
+        assert response.json()["message"] == "No trips found for the given filters."
 
 
 class TestBreakdownLogic:
