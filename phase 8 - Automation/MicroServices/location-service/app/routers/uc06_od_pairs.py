@@ -9,7 +9,7 @@ def get_od_pairs(
     start_date: date = Query(None),
     end_date:   date = Query(None),
     limit:      int  = Query(20, ge=1, le=100),
-    min_trips:  int  = Query(100, ge=1), #Se tiveremos poucas linhas no dataset, alterar este valor de 100 para algo menor, por exemplo 10.
+    min_trips:  int  = Query(10, ge=1),
 ):
     if start_date and end_date and end_date < start_date:
         raise HTTPException(status_code=400, detail="end_date must be after start_date")
