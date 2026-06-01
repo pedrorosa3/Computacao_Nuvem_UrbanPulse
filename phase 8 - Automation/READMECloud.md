@@ -367,7 +367,7 @@ gcloud functions delete trip-data-ingestion --region=europe-west1 --gen2
 gcloud container clusters delete urbanpulse --zone=europe-west1-b
 ```
 
-Verificar também em **Compute Engine → Disks** se ficaram discos órfãos e apagá-los.
+Verificar também em **Compute Engine → Disks** se ficaram discos órfãos e apagá-los
 
 ## Portas
 
