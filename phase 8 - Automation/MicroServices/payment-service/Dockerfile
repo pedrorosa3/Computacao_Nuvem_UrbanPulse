@@ -16,4 +16,4 @@ COPY ./app ./app
 EXPOSE 8006
 
 # 6. Arrancar o servidor na porta 8006
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8006"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8006", "--limit-concurrency", "100", "--timeout-keep-alive", "5"]
