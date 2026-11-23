@@ -1,9 +1,11 @@
 import os
 import pandas as pd
 from sqlalchemy import create_engine, text
+from dotenv import load_dotenv
+load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", ".env"))
 
 # ── Config ───────────────────────────────────────────────────────────────────
-DATABASE_URL = "postgresql://urbanpulse:urbanpulse@localhost:5434/demand_db"
+DATABASE_URL = f"postgresql+psycopg2://urbanpulse:{os.environ['DEMAND_DB_PASSWORD']}@localhost:5434/demand_db"
 engine = create_engine(DATABASE_URL)
 
 TRIPS_CSV   = os.path.join(os.path.expanduser("~"), "yellow_tripdata_2015-01_clean.csv")

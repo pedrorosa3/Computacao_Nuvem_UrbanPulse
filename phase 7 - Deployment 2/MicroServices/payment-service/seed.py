@@ -1,7 +1,10 @@
 import pandas as pd
 from sqlalchemy import create_engine, text
+import os
+from dotenv import load_dotenv
+load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", ".env"))
 
-DATABASE_URL = "postgresql://admin:password@localhost:5435/payment_db"
+DATABASE_URL = f"postgresql+psycopg2://admin:{os.environ['PAYMENT_DB_PASSWORD']}@localhost:5435/payment_db"
 engine = create_engine(DATABASE_URL)
 
 with engine.connect() as conn:

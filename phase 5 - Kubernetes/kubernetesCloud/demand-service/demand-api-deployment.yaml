@@ -18,8 +18,13 @@ spec:
           image: europe-west1-docker.pkg.dev/fc60250/urbanpulse/demand-api:latest
           imagePullPolicy: Always
           env:
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: demand-db-secrets
+                  key: password
             - name: DATABASE_URL
-              value: postgresql://urbanpulse:urbanpulse@demand-db:5432/demand_db
+              value: postgresql://urbanpulse:$(DB_PASSWORD)@demand-db:5432/demand_db
             - name: LOCATION_SERVICE_URL
               value: "location-api:50054"
           ports:

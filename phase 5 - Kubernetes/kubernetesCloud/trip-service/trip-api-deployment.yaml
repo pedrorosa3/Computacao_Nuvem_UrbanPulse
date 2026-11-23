@@ -32,7 +32,10 @@ spec:
             - name: DB_USER
               value: "admin"
             - name: DB_PASSWORD
-              value: "isqueiro20"
+              valueFrom:
+                secretKeyRef:
+                  name: trip-db-secrets
+                  key: password
           ports:
             - containerPort: 8001
               name: rest

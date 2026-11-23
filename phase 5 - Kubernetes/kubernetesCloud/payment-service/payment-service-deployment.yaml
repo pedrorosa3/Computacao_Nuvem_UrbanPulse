@@ -30,9 +30,12 @@ spec:
             - name: DB_USER
               value: "admin"
             - name: DB_PASSWORD
-              value: "password"
+              valueFrom:
+                secretKeyRef:
+                  name: payment-db-secrets
+                  key: password
             - name: DATABASE_URL
-              value: "postgresql://admin:password@payment-db:5432/payment_db"
+              value: "postgresql://admin:$(DB_PASSWORD)@payment-db:5432/payment_db"
           resources:
             requests:
               cpu: "100m"

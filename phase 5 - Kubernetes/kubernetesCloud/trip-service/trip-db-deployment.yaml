@@ -25,7 +25,10 @@ spec:
             - name: POSTGRES_USER
               value: "admin"
             - name: POSTGRES_PASSWORD
-              value: "isqueiro20"
+              valueFrom:
+                secretKeyRef:
+                  name: trip-db-secrets
+                  key: password
             - name: POSTGRES_DB
               value: "trip_db"
             - name: PGDATA

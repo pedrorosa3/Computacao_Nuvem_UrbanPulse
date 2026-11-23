@@ -8,6 +8,14 @@ cd "C:\Users\Diogo Sousa\Desktop\FCUL\Mestrado\CN\Cloud-Computing\phase 4 - Impl
 
 kubectl create namespace urbanpulse
 
+### 2.1 Criar os Secrets
+
+Criar os Secrets com as passwords das DBs, a partir do `.env` da pasta `phase 5 - Kubernetes` (criado a partir do `.env.example`):
+
+```bash
+ENV_FILE="../phase 5 - Kubernetes/.env" bash "../phase 5 - Kubernetes/kubernetesCloud/create-secrets.sh"
+```
+
 ### 3. Criar o ConfigMap do init.sql do Location Service
 
 kubectl create configmap location-db-init `  --from-file=init.sql=./location-service/db/init.sql` -n urbanpulse

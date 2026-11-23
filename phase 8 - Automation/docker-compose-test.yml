@@ -16,7 +16,7 @@ services:
     image: postgres:16-alpine
     environment:
       POSTGRES_USER: admin
-      POSTGRES_PASSWORD: isqueiro20
+      POSTGRES_PASSWORD: ${LOCATION_DB_PASSWORD}
       POSTGRES_DB: location_db
     volumes:
       - ./MicroServices/location-service/db:/docker-entrypoint-initdb.d
@@ -34,7 +34,7 @@ services:
     image: postgres:16-alpine
     environment:
       POSTGRES_USER: urbanpulse
-      POSTGRES_PASSWORD: urbanpulse
+      POSTGRES_PASSWORD: ${DEMAND_DB_PASSWORD}
       POSTGRES_DB: demand_db
     volumes:
       - ./MicroServices/demand-service/db:/docker-entrypoint-initdb.d
@@ -52,7 +52,7 @@ services:
     image: postgres:16-alpine
     environment:
       POSTGRES_USER: admin
-      POSTGRES_PASSWORD: password
+      POSTGRES_PASSWORD: ${PAYMENT_DB_PASSWORD}
       POSTGRES_DB: payment_db
     volumes:
       - ./MicroServices/payment-service/init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -70,7 +70,7 @@ services:
     image: postgres:16-alpine
     environment:
       POSTGRES_USER: admin
-      POSTGRES_PASSWORD: isqueiro20
+      POSTGRES_PASSWORD: ${TRIP_DB_PASSWORD}
       POSTGRES_DB: trip_db
     volumes:
       - ./MicroServices/trip-service/db:/docker-entrypoint-initdb.d
@@ -88,7 +88,7 @@ services:
     image: postgres:16-alpine
     environment:
       POSTGRES_USER: urbanpulse
-      POSTGRES_PASSWORD: urbanpulse
+      POSTGRES_PASSWORD: ${REVENUE_DB_PASSWORD}
       POSTGRES_DB: revenue_db
     volumes:
       - ./MicroServices/revenue-service/db:/docker-entrypoint-initdb.d
@@ -110,7 +110,7 @@ services:
       DB_PORT: 5432
       DB_NAME: location_db
       DB_USER: admin
-      DB_PASSWORD: isqueiro20
+      DB_PASSWORD: ${LOCATION_DB_PASSWORD}
       DEMAND_SERVICE_URL: demand-api:50053
     ports:
       - "8000:8000"
@@ -126,7 +126,7 @@ services:
     build:
       context: ./MicroServices/demand-service
     environment:
-      DATABASE_URL: postgresql://urbanpulse:urbanpulse@demand-db:5432/demand_db
+      DATABASE_URL: postgresql://urbanpulse:${DEMAND_DB_PASSWORD}@demand-db:5432/demand_db
       LOCATION_SERVICE_URL: location-api:50054
       REDIS_URL: redis://redis:6379/0
       CACHE_TTL_SECONDS: "300"
@@ -148,7 +148,7 @@ services:
       DB_PORT: 5432
       DB_NAME: trip_db
       DB_USER: admin
-      DB_PASSWORD: isqueiro20
+      DB_PASSWORD: ${TRIP_DB_PASSWORD}
     ports:
       - "8001:8001"
       - "50051:50051"
@@ -165,8 +165,8 @@ services:
       DB_PORT: 5432
       DB_NAME: payment_db
       DB_USER: admin
-      DB_PASSWORD: password
-      DATABASE_URL: postgresql://admin:password@payment-db:5432/payment_db
+      DB_PASSWORD: ${PAYMENT_DB_PASSWORD}
+      DATABASE_URL: postgresql://admin:${PAYMENT_DB_PASSWORD}@payment-db:5432/payment_db
       TRIP_SERVICE_URL: trip-api:50051
     ports:
       - "8006:8006"
@@ -184,7 +184,7 @@ services:
     build:
       context: ./MicroServices/revenue-service
     environment:
-      DATABASE_URL: postgresql://urbanpulse:urbanpulse@revenue-db:5432/revenue_db
+      DATABASE_URL: postgresql://urbanpulse:${REVENUE_DB_PASSWORD}@revenue-db:5432/revenue_db
       TRIP_SERVICE_URL: trip-api:50051
       LOCATION_SERVICE_URL: location-api:50054
       REDIS_URL: redis://redis:6379/0

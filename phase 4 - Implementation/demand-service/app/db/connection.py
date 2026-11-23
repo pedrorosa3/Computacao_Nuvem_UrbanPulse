@@ -5,7 +5,7 @@ from contextlib import contextmanager
 
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "postgresql://urbanpulse:urbanpulse@db-demand:5432/demand_db"
+    "postgresql://urbanpulse@db-demand:5432/demand_db"
 )
 
 @contextmanager

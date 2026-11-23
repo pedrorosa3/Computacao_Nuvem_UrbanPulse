@@ -3,6 +3,9 @@ import numpy as np
 import pandas as pd
 import calendar
 import sys
+import os
+from dotenv import load_dotenv
+load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", ".env"))
 
 # ── Config ───────────────────────────────────────────────────────────────────
 DB_CONFIG = {
@@ -10,7 +13,7 @@ DB_CONFIG = {
     "port":     5434,
     "dbname":   "demand_db",
     "user":     "urbanpulse",
-    "password": "urbanpulse",
+    "password": os.environ["DEMAND_DB_PASSWORD"],
 }
 
 ZONE_IDS = [161, 162, 163, 164, 230, 186, 87, 88, 137, 141, 79, 211, 234, 237, 239]

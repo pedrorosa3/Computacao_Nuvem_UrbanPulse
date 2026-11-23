@@ -22,6 +22,7 @@ E dos ficheiros CSV:
 
 - `yellow_tripdata_2015-01_clean.csv`
 - `taxi_zone_lookup.csv`
+- `.env` (criado a partir do `.env.example`, com as passwords)
 
 > Nota: O upload só é necessário na primeira vez. O Cloud Shell guarda os ficheiros entre sessões.
 
@@ -106,6 +107,16 @@ kubectl create configmap payment-db-init \
   --from-file=init.sql=/home/diogocsousa27/MicroServices/payment-service/init.sql \
   -n urbanpulse
 ```
+
+## 3.1 - Criar os Secrets (passwords das DBs)
+
+As passwords já não estão nos YAMLs. Estão no ficheiro `.env`, que não vai para o Git. Fazer upload do `.env` para a home do Cloud Shell (`~/.env`), criado a partir do `.env.example`, e correr:
+
+```bash
+bash ~/kubernetesCloud/create-secrets.sh
+```
+
+> Este passo tem de ser feito ANTES de aplicar os YAMLs. Sem os Secrets, os pods ficam em `CreateContainerConfigError`.
 
 ## 4 - Aplicar os yamls
 

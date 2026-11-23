@@ -1,12 +1,16 @@
 import pandas as pd
 from sqlalchemy import create_engine
+import os
+from dotenv import load_dotenv
+load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".env"))
 
 # URL de ligação à DB através do teu PC local (porta 5434)
-DATABASE_URL = "postgresql://admin:password@localhost:5435/payment_db"
+DATABASE_URL = f"postgresql+psycopg2://admin:{os.environ['PAYMENT_DB_PASSWORD']}@localhost:5435/payment_db"
 engine = create_engine(DATABASE_URL)
 
 print("A ler o dataset...")
-df = pd.read_csv("/home/pedrorosa3/yellow_tripdata_2015-01_clean.csv", nrows=10000)
+TRIPS_CSV = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "yellow_tripdata_2015-01_clean.csv")
+df = pd.read_csv(TRIPS_CSV, nrows=10000)
 
 # Mapear os IDs de pagamento do dataset original para texto
 payment_map = {1: 'card', 2: 'cash', 3: 'no_charge', 4: 'dispute', 5: 'unknown', 6: 'voided'}

@@ -130,12 +130,16 @@ jobs:
       - name: Install test dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pytest requests psycopg2-binary pandas sqlalchemy
+          pip install pytest requests psycopg2-binary pandas sqlalchemy python-dotenv
 
       - name: Copy test CSVs to home directory
         run: |
           cp "phase 8 - Automation/test-data/test_trips.csv" ~/yellow_tripdata_2015-01_clean.csv
           cp "phase 8 - Automation/test-data/taxi_zone_lookup.csv" ~/taxi_zone_lookup.csv
+
+      - name: Create .env from example (BDs de teste efémeras)
+        working-directory: "phase 8 - Automation"
+        run: cp .env.example .env
 
       - name: Start all services
         working-directory: "phase 8 - Automation"

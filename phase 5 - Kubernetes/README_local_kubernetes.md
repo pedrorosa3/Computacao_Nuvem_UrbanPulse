@@ -23,6 +23,14 @@ kubectl create namespace urbanpulse
 
 ---
 
+## 2.1 Criar os Secrets (só uma vez)
+
+Criar os Secrets com as passwords das DBs, a partir do `.env` da pasta `phase 5 - Kubernetes` (criado a partir do `.env.example`):
+
+```bash
+ENV_FILE="../phase 5 - Kubernetes/.env" bash "../phase 5 - Kubernetes/kubernetesCloud/create-secrets.sh"
+```
+
 ## 3. Criar os ConfigMaps com os init.sql
 
 ### Demand Service

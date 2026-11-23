@@ -4,7 +4,7 @@ services:
     container_name: location-db
     environment:
       POSTGRES_USER: admin
-      POSTGRES_PASSWORD: isqueiro20
+      POSTGRES_PASSWORD: ${LOCATION_DB_PASSWORD}
       POSTGRES_DB: location_db
     volumes:
       - ./db:/docker-entrypoint-initdb.d
@@ -26,7 +26,7 @@ services:
       DB_PORT: 5432
       DB_NAME: location_db
       DB_USER: admin
-      DB_PASSWORD: isqueiro20
+      DB_PASSWORD: ${LOCATION_DB_PASSWORD}
       DEMAND_SERVICE_URL: demand-api:50053
     ports:
       - "8000:8000" # REST API

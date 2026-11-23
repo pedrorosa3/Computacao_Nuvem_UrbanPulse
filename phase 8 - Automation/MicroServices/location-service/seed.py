@@ -1,8 +1,10 @@
 import pandas as pd
 import os
 from sqlalchemy import create_engine, text
+from dotenv import load_dotenv
+load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", ".env"))
 
-DATABASE_URL = "postgresql://admin:isqueiro20@localhost:5437/location_db"
+DATABASE_URL = f"postgresql+psycopg2://admin:{os.environ['LOCATION_DB_PASSWORD']}@localhost:5437/location_db"
 engine = create_engine(DATABASE_URL)
 
 ZONES_CSV = os.path.join(os.path.expanduser("~"), "taxi_zone_lookup.csv")

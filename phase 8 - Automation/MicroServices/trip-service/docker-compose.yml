@@ -4,7 +4,7 @@ services:
     container_name: trip-db
     environment:
       POSTGRES_USER: admin
-      POSTGRES_PASSWORD: isqueiro20
+      POSTGRES_PASSWORD: ${TRIP_DB_PASSWORD}
       POSTGRES_DB: trip_db
     volumes:
       - ./db:/docker-entrypoint-initdb.d
@@ -26,7 +26,7 @@ services:
       DB_PORT: 5432
       DB_NAME: trip_db
       DB_USER: admin
-      DB_PASSWORD: isqueiro20
+      DB_PASSWORD: ${TRIP_DB_PASSWORD}
     ports:
       - "8001:8001" # REST API
       - "50051:50051" # gRPC Server

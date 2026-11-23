@@ -22,6 +22,7 @@ E dos ficheiros CSV:
 
 - `yellow_tripdata_2015-01_clean.csv`
 - `taxi_zone_lookup.csv`
+- `.env` (criado a partir do `.env.example`, com as passwords)
 
 > Nota: O upload só é necessário na primeira vez. O Cloud Shell guarda os ficheiros entre sessões.
 
@@ -115,13 +116,13 @@ kubectl create configmap payment-db-init \
 
 > Este passo tem de ser feito ANTES de aplicar os YAMLs dos deployments, para garantir que os pods conseguem ler as credenciais ao arrancar. Se os Secrets não existirem quando os pods iniciarem, ficam em `CreateContainerConfigError`.
 
+As passwords já não estão nos YAMLs. Estão no ficheiro `.env`, que não vai para o Git. Fazer upload do `.env` para a home do Cloud Shell (`~/.env`), criado a partir do `.env.example`, e correr:
+
 ```bash
-kubectl apply -f ~/kubernetesCloud/location-service/location-secrets.yaml
-kubectl apply -f ~/kubernetesCloud/trip-service/trip-secrets.yaml
-kubectl apply -f ~/kubernetesCloud/demand-service/demand-secrets.yaml
-kubectl apply -f ~/kubernetesCloud/revenue-service/revenue-secrets.yaml
-kubectl apply -f ~/kubernetesCloud/payment-service/payment-secrets.yaml
+bash ~/kubernetesCloud/create-secrets.sh
 ```
+
+O script cria os Secrets das 5 BDs e o do Grafana (`grafana-secret`).
 
 ## 5 - Aplicar os yamls
 
@@ -238,7 +239,7 @@ kubectl get pods -n urbanpulse | grep -E "prometheus|grafana"
 O GCE Load Balancer demora 3-5 minutos a propagar os novos backends. Após esse tempo, aceder a:
 
 - Prometheus: `http://<IP>/prometheus` → **Status → Targets** — os três targets (`location-api`, `analytics-api`, `payment-service`) devem aparecer como `UP`
-- Grafana: `http://<IP>/grafana` — credenciais: utilizador `admin`, password `urbanpulse2026`
+- Grafana: `http://<IP>/grafana` — credenciais: utilizador `admin`, password definida em `GRAFANA_ADMIN_PASSWORD` no `.env`
 
 ## 10 - Configurar o Grafana
 
@@ -278,6 +279,8 @@ Copiar o valor da coluna `EXTERNAL-IP`.
 **11.2 — Deploy da Cloud Function**
 
 ```bash
+set -a; source ~/.env; set +a   # carrega TRIP_DB_PASSWORD
+
 gcloud functions deploy trip-data-ingestion \
   --gen2 \
   --runtime=python311 \
@@ -286,7 +289,7 @@ gcloud functions deploy trip-data-ingestion \
   --entry-point=ingest_trips \
   --trigger-event-filters="type=google.cloud.storage.object.v1.finalized" \
   --trigger-event-filters="bucket=urbanpulse-trip-data" \
-  --set-env-vars DB_HOST=EXTERNAL_IP_DA_TRIP_DB,DB_PORT=5432,DB_NAME=trip_db,DB_USER=admin,DB_PASSWORD=isqueiro20 \
+  --set-env-vars DB_HOST=EXTERNAL_IP_DA_TRIP_DB,DB_PORT=5432,DB_NAME=trip_db,DB_USER=admin,DB_PASSWORD="$TRIP_DB_PASSWORD" \
   --memory=4Gi \
   --timeout=540s
 ```

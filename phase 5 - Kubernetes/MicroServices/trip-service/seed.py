@@ -3,6 +3,8 @@ import pandas as pd
 import numpy as np
 import sys
 import os
+from dotenv import load_dotenv
+load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", ".env"))
 
 # ── Config ───────────────────────────────────────────────────────────────────
 DB_CONFIG = {
@@ -10,7 +12,7 @@ DB_CONFIG = {
     "port":     5436,
     "dbname":   "trip_db",
     "user":     "admin",
-    "password": "isqueiro20",
+    "password": os.environ["TRIP_DB_PASSWORD"],
 }
 
 BASE_DIR  = os.path.dirname(os.path.abspath(__file__))

@@ -2,6 +2,8 @@ import psycopg2
 import pandas as pd
 import sys
 import os
+from dotenv import load_dotenv
+load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", ".env"))
 
 # ── Config ───────────────────────────────────────────────────────────────────
 DB_CONFIG = {
@@ -9,7 +11,7 @@ DB_CONFIG = {
     "port":     5433,
     "dbname":   "revenue_db",
     "user":     "urbanpulse",
-    "password": "urbanpulse",
+    "password": os.environ["REVENUE_DB_PASSWORD"],
 }
 
 TRIPS_CSV = os.path.join(os.path.expanduser("~"), "yellow_tripdata_2015-01_clean.csv")

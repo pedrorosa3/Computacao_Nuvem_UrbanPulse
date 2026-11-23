@@ -20,7 +20,10 @@ spec:
             - name: POSTGRES_USER
               value: "urbanpulse"
             - name: POSTGRES_PASSWORD
-              value: "urbanpulse"
+              valueFrom:
+                secretKeyRef:
+                  name: demand-db-secrets
+                  key: password
             - name: POSTGRES_DB
               value: "demand_db"
             - name: PGDATA

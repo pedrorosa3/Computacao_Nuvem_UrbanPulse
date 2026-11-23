@@ -2,6 +2,8 @@ import psycopg2
 import pandas as pd
 import sys
 import os
+from dotenv import load_dotenv
+load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".env"))
 
 # ── Config ───────────────────────────────────────────────────────────────────
 DB_CONFIG = {
@@ -9,7 +11,7 @@ DB_CONFIG = {
     "port":     5434,
     "dbname":   "demand_db",
     "user":     "urbanpulse",
-    "password": "urbanpulse",
+    "password": os.environ["DEMAND_DB_PASSWORD"],
 }
 
 BASE_DIR  = os.path.dirname(os.path.abspath(__file__))

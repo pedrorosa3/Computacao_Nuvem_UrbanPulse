@@ -96,6 +96,8 @@ Copiar o valor da coluna `EXTERNAL-IP`.
 ### 8 — Deploy da Cloud Function
 
 ```bash
+set -a; source ~/.env; set +a   # carrega TRIP_DB_PASSWORD
+
 gcloud functions deploy trip-data-ingestion \
   --gen2 \
   --runtime=python311 \
@@ -104,7 +106,7 @@ gcloud functions deploy trip-data-ingestion \
   --entry-point=ingest_trips \
   --trigger-event-filters="type=google.cloud.storage.object.v1.finalized" \
   --trigger-event-filters="bucket=urbanpulse-trip-data" \
-  --set-env-vars DB_HOST=EXTERNAL_IP_DA_TRIP_DB,DB_PORT=5432,DB_NAME=trip_db,DB_USER=admin,DB_PASSWORD=isqueiro20 \
+  --set-env-vars DB_HOST=EXTERNAL_IP_DA_TRIP_DB,DB_PORT=5432,DB_NAME=trip_db,DB_USER=admin,DB_PASSWORD="$TRIP_DB_PASSWORD" \
   --memory=4Gi \
   --timeout=540s
 ```
