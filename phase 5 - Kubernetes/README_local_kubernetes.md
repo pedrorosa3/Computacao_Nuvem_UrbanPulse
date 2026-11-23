@@ -10,7 +10,7 @@
 ## 1. Ir para a pasta do projeto
 
 ```bash
-cd "C:\Users\Francisco\Desktop\Cloud-Computing\phase 4 - Implementation"
+cd "<pasta do repositório>\phase 5 - Kubernetes\MicroServices"
 ```
 
 ---
@@ -28,7 +28,7 @@ kubectl create namespace urbanpulse
 Criar os Secrets com as passwords das DBs, a partir do `.env` da pasta `phase 5 - Kubernetes` (criado a partir do `.env.example`):
 
 ```bash
-ENV_FILE="../phase 5 - Kubernetes/.env" bash "../phase 5 - Kubernetes/kubernetesCloud/create-secrets.sh"
+ENV_FILE="../.env" bash "../kubernetesCloud/create-secrets.sh"
 ```
 
 ## 3. Criar os ConfigMaps com os init.sql
@@ -64,12 +64,12 @@ docker build -t revenue-api:latest ./revenue-service
 
 ### Demand Service
 ```bash
-kubectl apply -f "../phase 5 - Kubernetes/kubernetes/demand-service/"
+kubectl apply -f "../kubernetes/demand-service/"
 ```
 
 ### Revenue Service
 ```bash
-kubectl apply -f "../phase 5 - Kubernetes/kubernetes/revenue-service/"
+kubectl apply -f "../kubernetes/revenue-service/"
 ```
 
 ---
@@ -85,6 +85,8 @@ Esperar até todos estarem `1/1 Running`. Pode demorar 1-2 minutos.
 ---
 
 ## 7. Popular as bases de dados (seed)
+
+> Antes do seed: `pip install pandas sqlalchemy psycopg2-binary python-dotenv numpy`. O `seed.py` lê a password do `.env` da pasta `phase 5 - Kubernetes` e o CSV da home (`~/yellow_tripdata_2015-01_clean.csv`).
 
 ### Demand Service
 

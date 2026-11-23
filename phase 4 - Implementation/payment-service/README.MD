@@ -1,4 +1,10 @@
-Para correr, ir até à loc da pasta no PowerShell, e correr: docker-compose up --build
+NOTA (passwords e dependências):
+- As passwords das BDs estão no ficheiro .env da pasta "phase 4 - Implementation" (copiar .env.example para .env e definir as passwords).
+- O docker compose deste serviço tem de ser corrido com: docker compose --env-file ../.env up --build
+- Antes do seed.py: pip install pandas sqlalchemy psycopg2-binary python-dotenv numpy
+- Nesta fase, os CSV ficam na pasta data/ do serviço.
+
+Para correr, ir até à loc da pasta no PowerShell, e correr: docker compose --env-file ../.env up --build
 
 Para o container da DB, estou a usar uma image oficial do Postgre.
 
@@ -30,9 +36,9 @@ yellow_tripdata_2015-01_clean.csv
 
 # Comandos para correr no PowerShell:
 
-cd "C:\...\Cloud-Computing\phase4\payment-service"
+cd "<pasta do repositório>\phase 4 - Implementation\payment-service"
 
-docker-compose up --build
+docker compose --env-file ../.env up --build
 
 python seed.py - Noutro terminal. Este script é para colocar dados na DB. Antes de o correr, a DB está vazia.
 

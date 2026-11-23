@@ -12,16 +12,28 @@ python taxiZonesScript/taxiZones.py
 
 **2.** Copiar o ficheiro `yellow_tripdata_2015-01_clean.csv` para a pasta `data/` de cada microserviço. (tem de ser criada à mão por nós, o analytics não tem esta pasta, e o location service deve conter também o "taxi_zone_lookup.csv".)
 
-**3.** Iniciar os containers:
+**3.** Criar o ficheiro `.env` com as passwords das bases de dados (nesta pasta):
+
+cp .env.example .env
+
+Editar o `.env` e definir as passwords. O ficheiro está no `.gitignore` e nunca deve ser commitado.
+
+**4.** Iniciar os containers:
 
 docker compose up --build
 
-**4.** Popular as bases de dados (Abrir um terminal para cada microservice):
+**5.** Instalar as dependências dos seeds e popular as bases de dados (com os containers a correr):
+
+pip install pandas sqlalchemy psycopg2-binary python-dotenv numpy
 
 python location-service/seed.py
 python demand-service/seed.py
+python demand-service/seed_extra.py
 python payment-service/seed.py
 python trip-service/seed.py
+python revenue-service/seed.py
+
+**Nota:** o Postgres só lê a password na primeira vez que cria a base de dados. Se mudares as passwords no `.env` depois de já teres corrido o projeto, apaga as pastas `*/db-data/` antes de voltar a arrancar. Caso contrário, os seeds falham com `password authentication failed`.
 
 ## Para testes, por default os varios seed.py estão limitados a 10 mil linhas. Podemos mudar este valor quando quisermos.
 
@@ -29,7 +41,7 @@ python trip-service/seed.py
 
 | Serviço           | REST | gRPC  | BD   |
 | ----------------- | ---- | ----- | ---- |
-| Location Service  | 8000 | 50054 | 5433 |
+| Location Service  | 8000 | 50054 | 5437 |
 | Demand Service    | 8002 | 50053 | 5434 |
 | Payment Service   | 8006 | 50052 | 5435 |
 | Trip Service      | 8001 | 50051 | 5436 |

@@ -167,28 +167,28 @@ kubectl get pods -n urbanpulse
 kubectl port-forward svc/location-db 5437:5432 -n urbanpulse &
 sleep 2
 cd ~/MicroServices/location-service
-pip3 install pandas sqlalchemy psycopg2-binary
+pip3 install pandas sqlalchemy psycopg2-binary python-dotenv
 python3 seed.py
 
 # Demand
 kubectl port-forward svc/demand-db 5434:5432 -n urbanpulse &
 sleep 2
 cd ~/MicroServices/demand-service
-pip3 install pandas sqlalchemy psycopg2-binary
+pip3 install pandas sqlalchemy psycopg2-binary python-dotenv
 python3 seed.py
 
 # Revenue
 kubectl port-forward svc/revenue-db 5433:5432 -n urbanpulse &
 sleep 2
 cd ~/MicroServices/revenue-service
-pip3 install pandas sqlalchemy psycopg2-binary
+pip3 install pandas sqlalchemy psycopg2-binary python-dotenv
 python3 seed.py
 
 # Payment
 kubectl port-forward svc/payment-db 5435:5432 -n urbanpulse &
 sleep 2
 cd ~/MicroServices/payment-service
-pip3 install pandas sqlalchemy psycopg2-binary
+pip3 install pandas sqlalchemy psycopg2-binary python-dotenv
 python3 seed.py
 ```
 

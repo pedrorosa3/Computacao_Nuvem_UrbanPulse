@@ -1,3 +1,9 @@
+NOTA (passwords e dependências):
+- As passwords das BDs estão no ficheiro .env da pasta "phase 5 - Kubernetes" (copiar .env.example para .env e definir as passwords).
+- O docker compose deste serviço tem de ser corrido com: docker compose --env-file ../../.env up --build
+- Antes do seed.py: pip install pandas sqlalchemy psycopg2-binary python-dotenv numpy
+- Nesta fase, o seed.py lê os CSV da home (~/yellow_tripdata_2015-01_clean.csv e, no location, ~/taxi_zone_lookup.csv).
+
 ==============================
   UrbanPulse — Trip Service
   Phase 4 — Guilherme Almeida
@@ -15,7 +21,7 @@ COMO CORRER
 
 3. Subir os containers:
    cd trip-service
-   docker-compose up --build
+   docker compose --env-file ../../.env up --build
 
 4. Seed da base de dados (noutro terminal, após o container estar up):
    python seed.py
