@@ -17,7 +17,7 @@ gcloud artifacts repositories create urbanpulse \
 
 ```bash
 cd ~/MicroServices/[nome-servico]
-gcloud builds submit --tag europe-west1-docker.pkg.dev/fc60250/urbanpulse/[nome-servico]:latest .
+gcloud builds submit --tag europe-west1-docker.pkg.dev/computacaonuvem60294/urbanpulse/[nome-servico]:latest .
 ```
 
 Demora ~2-3 minutos. Quando terminar deves ver `STATUS: SUCCESS`.
@@ -28,17 +28,17 @@ Demora ~2-3 minutos. Quando terminar deves ver `STATUS: SUCCESS`.
 
 | Serviço         | Comando                                                                                              |
 | --------------- | ---------------------------------------------------------------------------------------------------- |
-| demand-service  | `gcloud builds submit --tag europe-west1-docker.pkg.dev/fc60250/urbanpulse/demand-api:latest .`  |
-| payment-service | `gcloud builds submit --tag europe-west1-docker.pkg.dev/fc60250/urbanpulse/payment-api:latest .` |
-| trip-service    | `gcloud builds submit --tag europe-west1-docker.pkg.dev/fc60250/urbanpulse/trip-api:latest .`    |
-| revenue-service | `gcloud builds submit --tag europe-west1-docker.pkg.dev/fc60250/urbanpulse/revenue-api:latest .` |
+| demand-service  | `gcloud builds submit --tag europe-west1-docker.pkg.dev/computacaonuvem60294/urbanpulse/demand-api:latest .`  |
+| payment-service | `gcloud builds submit --tag europe-west1-docker.pkg.dev/computacaonuvem60294/urbanpulse/payment-service:latest .` |
+| trip-service    | `gcloud builds submit --tag europe-west1-docker.pkg.dev/computacaonuvem60294/urbanpulse/trip-api:latest .`    |
+| revenue-service | `gcloud builds submit --tag europe-west1-docker.pkg.dev/computacaonuvem60294/urbanpulse/revenue-api:latest .` |
 
 ---
 
 ## Verificar que a imagem foi guardada
 
 ```bash
-gcloud artifacts docker images list europe-west1-docker.pkg.dev/fc60250/urbanpulse
+gcloud artifacts docker images list europe-west1-docker.pkg.dev/computacaonuvem60294/urbanpulse
 ```
 
 ---

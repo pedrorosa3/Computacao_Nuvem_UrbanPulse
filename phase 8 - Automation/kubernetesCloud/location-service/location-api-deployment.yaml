@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
         - name: location-api
-          image: europe-west1-docker.pkg.dev/fc60250/urbanpulse/location-api:latest
+          image: europe-west1-docker.pkg.dev/computacaonuvem60294/urbanpulse/location-api:latest
           imagePullPolicy: Always
           env:
             - name: DB_HOST

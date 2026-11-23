@@ -244,9 +244,32 @@ kubectl get pods -n urbanpulse
 
 ### 5️⃣ Deploy na Google Cloud (GKE)
 
+> [!IMPORTANT]
+> **Por fazer:** o Artifact Registry do projeto `computacaonuvem60294` ainda não está ativo. A conta de faturação ligada ao projeto foi fechada (os créditos acabaram), e sem faturação a Google não deixa ativar o Artifact Registry, o GKE nem as Cloud Functions. Enquanto isto não estiver resolvido, o job de CD do `ci-60294.yml` é saltado com um aviso (o pipeline não falha) e as imagens não são publicadas.
+>
+> Passos para o pôr a funcionar:
+>
+> 1. **Ligar uma conta de faturação ativa ao projeto.** Pode ser com novos créditos de educação, com o teste gratuito ou reativando a conta antiga. Na Cloud Shell:
+>
+>    ```bash
+>    gcloud billing accounts list                       # ver contas com OPEN = True
+>    gcloud billing projects link computacaonuvem60294 --billing-account=<ID_DA_CONTA>
+>    gcloud billing projects describe computacaonuvem60294   # deve mostrar billingEnabled: true
+>    ```
+>
+> 2. **Ativar os serviços e criar o repositório:**
+>
+>    ```bash
+>    gcloud config set project computacaonuvem60294
+>    gcloud services enable artifactregistry.googleapis.com iam.googleapis.com
+>    gcloud artifacts repositories create urbanpulse --repository-format=docker --location=europe-west1
+>    ```
+>
+> 3. **Criar a service account do CD e o secret `GCP_SA_KEY_60294` no GitHub.** Os passos estão em [`README_CICD.md`](<phase 8 - Automation/README_CICD.md#configuração-só-uma-vez>).
+
 O guia completo está em [`phase 8 - Automation/READMECloud.md`](<phase 8 - Automation/READMECloud.md>). As etapas principais são:
 
-1. **Publicar as imagens** no Artifact Registry. Ver [`READMEArtifactRegistry.md`](<phase 8 - Automation/READMEArtifactRegistry.md>).
+1. **Publicar as imagens** no Artifact Registry do projeto `computacaonuvem60294` (`europe-west1-docker.pkg.dev/computacaonuvem60294/urbanpulse`). O CD do `ci-60294.yml` publica-as automaticamente a cada merge para `main`. Para o fazer à mão, ver [`READMEArtifactRegistry.md`](<phase 8 - Automation/READMEArtifactRegistry.md>). Quem usar outro projeto GCP troca este ID no campo `image:` dos YAMLs de `kubernetesCloud/`.
 2. **Criar o cluster:**
 
    ```bash
@@ -312,6 +335,8 @@ O pipeline de GitHub Actions corre automaticamente:
 | Push para branch `NNNNN` | Lint + Unit Tests                                       |
 | Pull Request para `main` | Lint + Unit Tests + PR Tests                            |
 | Push para `main`         | Lint + Unit Tests + Integration Tests + Build & Push (CD) |
+
+O Build & Push precisa do secret `GCP_SA_KEY_60294` no GitHub. Sem ele, o passo é saltado com um aviso e o pipeline não falha.
 
 Mais detalhes em [`phase 8 - Automation/README_CICD.md`](<phase 8 - Automation/README_CICD.md>).
 

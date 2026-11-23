@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: demand-api
-          image: europe-west1-docker.pkg.dev/fc60250/urbanpulse/demand-api:latest
+          image: europe-west1-docker.pkg.dev/computacaonuvem60294/urbanpulse/demand-api:latest
           imagePullPolicy: Always
           env:
             - name: DB_USER

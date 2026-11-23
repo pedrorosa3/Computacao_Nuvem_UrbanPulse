@@ -60,8 +60,8 @@ Como a imagem do Payment Service está num repositório privado para garantir a 
 kubectl create secret docker-registry dockerhub-secret \
   --docker-server=https://index.docker.io/v1/ \
   --docker-username=pedrorosa3 \
-  --docker-password=***REMOVED*** \
-  --docker-email=pedromjrosa333@gmail.com \
+  --docker-password=<O_TEU_ACCESS_TOKEN_DOCKER_HUB> \
+  --docker-email=<O_TEU_EMAIL> \
   -n urbanpulse
 ```
 

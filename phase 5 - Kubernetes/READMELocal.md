@@ -27,8 +27,9 @@ docker build -t analytics-api:latest ./analytics-service
 
 ### 5. Aplicar os yamls
 
-kubectl apply -f "../phase 5 - Kubernetes/kubernetes/location-service/"
-kubectl apply -f "../phase 5 - Kubernetes/kubernetes/analytics-service/"
+kubectl apply -f "../phase 5 - Kubernetes/kubernetesLocal/location-service/"
+kubectl apply -f "../phase 5 - Kubernetes/kubernetesLocal/trip-service/"
+kubectl apply -f "../phase 5 - Kubernetes/kubernetesLocal/analytics-service/"
 
 ### 6. Verificar que os pods estão a correr
 

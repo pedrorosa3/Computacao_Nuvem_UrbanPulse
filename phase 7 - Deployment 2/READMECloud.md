@@ -8,8 +8,10 @@ Os ficheiros internos do PostgreSQL estão em `/var/lib/postgresql/data/pgdata` 
 
 ## Trocar o caminho dos diversos seed.py
 
-Como o CSV é partilhado por todos os microservices, todos os seed.py devem apontar para o diretório home do Cloud Shell, no meu caso:
-`/home/diogocsousa27/yellow_tripdata_2015-01_clean.csv`
+Como o CSV é partilhado por todos os microservices, todos os seed.py devem apontar para o diretório home do Cloud Shell, ou seja:
+`~/yellow_tripdata_2015-01_clean.csv`
+
+Os `seed.py` já usam este caminho (`os.path.expanduser(\"~\")`), por isso basta fazer upload dos CSV para a home. Não é preciso alterar nada no código.
 
 ## Preparar os ficheiros no Cloud Shell
 
@@ -31,7 +33,7 @@ E dos ficheiros CSV:
 - Todos os deployment YAMLs devem apontar para as vossas images no artifact registry.
 - Se o seed correr antes do init.sql criar a tabela, o pandas cria-a sem a coluna `id`, o que causa erros no gRPC. Nesse caso, apagar e recriar a tabela manualmente.
 
-## 0 - Criar o Artifact Registry e fazer push das imagens (Mudar o fc60250 para o nome do vosso projeto)
+## 0 - Criar o Artifact Registry e fazer push das imagens (projeto `computacaonuvem60294`; quem usar outro projeto troca este ID)
 
 ```bash
 gcloud artifacts repositories create urbanpulse \
@@ -39,28 +41,28 @@ gcloud artifacts repositories create urbanpulse \
   --location=europe-west1
 
 cd ~/MicroServices/location-service
-gcloud builds submit --tag europe-west1-docker.pkg.dev/fc60250/urbanpulse/location-api:latest .
+gcloud builds submit --tag europe-west1-docker.pkg.dev/computacaonuvem60294/urbanpulse/location-api:latest .
 
 cd ~/MicroServices/analytics-service
-gcloud builds submit --tag europe-west1-docker.pkg.dev/fc60250/urbanpulse/analytics-api:latest .
+gcloud builds submit --tag europe-west1-docker.pkg.dev/computacaonuvem60294/urbanpulse/analytics-api:latest .
 
 cd ~/MicroServices/demand-service
-gcloud builds submit --tag europe-west1-docker.pkg.dev/fc60250/urbanpulse/demand-api:latest .
+gcloud builds submit --tag europe-west1-docker.pkg.dev/computacaonuvem60294/urbanpulse/demand-api:latest .
 
 cd ~/MicroServices/revenue-service
-gcloud builds submit --tag europe-west1-docker.pkg.dev/fc60250/urbanpulse/revenue-api:latest .
+gcloud builds submit --tag europe-west1-docker.pkg.dev/computacaonuvem60294/urbanpulse/revenue-api:latest .
 
 cd ~/MicroServices/trip-service
-gcloud builds submit --tag europe-west1-docker.pkg.dev/fc60250/urbanpulse/trip-api:latest .
+gcloud builds submit --tag europe-west1-docker.pkg.dev/computacaonuvem60294/urbanpulse/trip-api:latest .
 
 cd ~/MicroServices/payment-service
-gcloud builds submit --tag europe-west1-docker.pkg.dev/fc60250/urbanpulse/payment-service:latest .
+gcloud builds submit --tag europe-west1-docker.pkg.dev/computacaonuvem60294/urbanpulse/payment-service:latest .
 ```
 
 Verificar que as 6 imagens estão no registry:
 
 ```bash
-gcloud artifacts docker images list europe-west1-docker.pkg.dev/fc60250/urbanpulse
+gcloud artifacts docker images list europe-west1-docker.pkg.dev/computacaonuvem60294/urbanpulse
 ```
 
 ## 1 - Criar o cluster
@@ -88,23 +90,23 @@ kubectl create namespace urbanpulse
 
 ```bash
 kubectl create configmap location-db-init \
-  --from-file=init.sql=/home/diogocsousa27/MicroServices/location-service/db/init.sql \
+  --from-file=init.sql=$HOME/MicroServices/location-service/db/init.sql \
   -n urbanpulse
 
 kubectl create configmap demand-db-init \
-  --from-file=init.sql=/home/diogocsousa27/MicroServices/demand-service/db/init.sql \
+  --from-file=init.sql=$HOME/MicroServices/demand-service/db/init.sql \
   -n urbanpulse
 
 kubectl create configmap revenue-db-init \
-  --from-file=init.sql=/home/diogocsousa27/MicroServices/revenue-service/db/init.sql \
+  --from-file=init.sql=$HOME/MicroServices/revenue-service/db/init.sql \
   -n urbanpulse
 
 kubectl create configmap trip-db-init \
-  --from-file=init.sql=/home/diogocsousa27/MicroServices/trip-service/db/init.sql \
+  --from-file=init.sql=$HOME/MicroServices/trip-service/db/init.sql \
   -n urbanpulse
 
 kubectl create configmap payment-db-init \
-  --from-file=init.sql=/home/diogocsousa27/MicroServices/payment-service/init.sql \
+  --from-file=init.sql=$HOME/MicroServices/payment-service/init.sql \
   -n urbanpulse
 ```
 
@@ -310,10 +312,10 @@ Verificar também em **Compute Engine → Disks** se ficaram discos órfãos e a
 ## Imagens no Artifact Registry
 
 ```
-europe-west1-docker.pkg.dev/fc60250/urbanpulse/location-api:latest
-europe-west1-docker.pkg.dev/fc60250/urbanpulse/analytics-api:latest
-europe-west1-docker.pkg.dev/fc60250/urbanpulse/demand-api:latest
-europe-west1-docker.pkg.dev/fc60250/urbanpulse/revenue-api:latest
-europe-west1-docker.pkg.dev/fc60250/urbanpulse/trip-api:latest
-europe-west1-docker.pkg.dev/fc60250/urbanpulse/payment-service:latest
+europe-west1-docker.pkg.dev/computacaonuvem60294/urbanpulse/location-api:latest
+europe-west1-docker.pkg.dev/computacaonuvem60294/urbanpulse/analytics-api:latest
+europe-west1-docker.pkg.dev/computacaonuvem60294/urbanpulse/demand-api:latest
+europe-west1-docker.pkg.dev/computacaonuvem60294/urbanpulse/revenue-api:latest
+europe-west1-docker.pkg.dev/computacaonuvem60294/urbanpulse/trip-api:latest
+europe-west1-docker.pkg.dev/computacaonuvem60294/urbanpulse/payment-service:latest
 ```

@@ -133,6 +133,59 @@ Push para main          →  Lint + Unit Tests + Integration Tests + Build & Pus
 
 ---
 
+## CD para o Artifact Registry `computacaonuvem60294` (60294 — Pedro Rosa)
+
+O workflow `.github/workflows/ci-60294.yml` tem um job **Build & Push Images (Artifact Registry 60294)**. Corre em push para `main`, depois dos Integration Tests passarem, e publica as 6 imagens em:
+
+```
+europe-west1-docker.pkg.dev/computacaonuvem60294/urbanpulse/<imagem>
+```
+
+Cada imagem é publicada com duas tags:
+- `:latest`, que é a que os YAMLs de `kubernetesCloud/` usam
+- `:<sha curto do commit>`, que serve para rollback
+
+### Se o secret não estiver configurado
+
+O job não falha. Mostra um aviso "CD saltado" e o pipeline fica verde. O mesmo vale para o CD do 60250, que salta quando o secret `GCP_SA_KEY` não existe no repositório. Era esse o erro `must specify exactly one of "workload_identity_provider" or "credentials_json"`.
+
+### Configuração (só uma vez)
+
+> **Pré-requisito:** o projeto `computacaonuvem60294` tem de ter uma **conta de faturação ativa**. Neste momento não tem (a conta de faturação foi fechada), e por isso o `gcloud services enable artifactregistry.googleapis.com` falha com `Billing account ... is not open`. Primeiro liga uma conta ativa com `gcloud billing projects link computacaonuvem60294 --billing-account=<ID_DA_CONTA>` (ver `gcloud billing accounts list`) e ativa os serviços com `gcloud services enable artifactregistry.googleapis.com iam.googleapis.com`.
+
+**1. No Cloud Shell do projeto `computacaonuvem60294`**, criar uma service account só com permissão de escrita no repositório `urbanpulse`:
+
+```bash
+gcloud config set project computacaonuvem60294
+
+gcloud artifacts repositories create urbanpulse \
+  --repository-format=docker --location=europe-west1   # se ainda não existir
+
+gcloud iam service-accounts create github-cd --display-name="GitHub Actions CD"
+
+gcloud artifacts repositories add-iam-policy-binding urbanpulse \
+  --location=europe-west1 \
+  --member="serviceAccount:github-cd@computacaonuvem60294.iam.gserviceaccount.com" \
+  --role="roles/artifactregistry.writer"
+
+gcloud iam service-accounts keys create ~/github-cd-key.json \
+  --iam-account=github-cd@computacaonuvem60294.iam.gserviceaccount.com
+```
+
+**2. No GitHub**, ir a **Settings → Secrets and variables → Actions → New repository secret**:
+- Nome: `GCP_SA_KEY_60294`
+- Valor: o conteúdo completo de `~/github-cd-key.json` (`cat ~/github-cd-key.json`)
+
+**3. Apagar a chave local** depois de criar o secret:
+
+```bash
+rm ~/github-cd-key.json
+```
+
+> A chave nunca deve ser commitada. Se a organização GCP bloquear a criação de chaves (`iam.disableServiceAccountKeyCreation`), a alternativa é usar Workload Identity Federation com o input `workload_identity_provider` do `google-github-actions/auth`.
+
+---
+
 ## O que precisam fazer
 
 Para adicionar o vosso serviço ao pipeline, são necessárias **4 alterações**:

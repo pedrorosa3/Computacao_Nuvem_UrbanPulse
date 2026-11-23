@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: revenue-api
-          image: europe-west1-docker.pkg.dev/fc60252/urbanpulse/revenue-api:latest
+          image: europe-west1-docker.pkg.dev/computacaonuvem60294/urbanpulse/revenue-api:latest
           imagePullPolicy: Always
           env:
             - name: DB_USER

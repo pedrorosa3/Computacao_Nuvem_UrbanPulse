@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
         - name: analytics-api
-          image: europe-west1-docker.pkg.dev/fc60250/urbanpulse/analytics-api:latest
+          image: europe-west1-docker.pkg.dev/computacaonuvem60294/urbanpulse/analytics-api:latest
           imagePullPolicy: Always
           env:
             - name: LOCATION_SERVICE_URL
